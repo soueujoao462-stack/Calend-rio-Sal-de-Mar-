@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sal de Maré — Calendário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F5F2;
+  --surface: #FFFFFF;
+  --surface2: #F2F0EC;
+  --border: #E8E4DE;
+  --border2: #D8D4CC;
+  --text: #1A1916;
+  --muted: #8A8478;
+  --faint: #C8C4BC;
+
+  --f1: #A0732A; --f1-bg: #FBF3E4; --f1-dot: #C8922A;
+  --f2: #2A7A58; --f2-bg: #E8F6EF; --f2-dot: #3DAF7A;
+  --f3: #5A48B0; --f3-bg: #EEEAFB; --f3-dot: #7B6FD4;
+  --f4: #2A62A0; --f4-bg: #E6F0FA; --f4-dot: #4A8FCC;
+  --f5: #A03878; --f5-bg: #FAEBF4; --f5-dot: #C85A98;
+  --f6: #A04828; --f6-bg: #FAEDE8; --f6-dot: #CC6840;
+  --crit: #B02020; --crit-bg: #FAEAEA; --crit-dot: #D03030;
+  --int: #6A6460; --int-bg: #F2F0EC; --int-dot: #8A8478;
+
+  --done-opacity: 0.45;
+  --radius: 8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── HEADER ─────────────────────────────── */
+.header {
+  padding: 2rem 2.5rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+}
+.brand h1 {
+  font-family: 'Lora', serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.brand p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tagline {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--muted);
+  padding-right: 16px;
+  border-right: 1px solid var(--border);
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--text); background: var(--surface2); }
+.icon-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* ─── TOOLBAR ────────────────────────────── */
+.toolbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+.f-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.f-btn:hover { color: var(--text); background: var(--surface2); }
+.f-btn.active { color: var(--text); background: var(--surface2); border-color: var(--border2); font-weight: 500; }
+.f-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.view-toggle { display: flex; gap: 2px; margin-left: auto; }
+.vt-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.vt-btn:first-child { border-radius: 6px 0 0 6px; }
+.vt-btn:last-child  { border-radius: 0 6px 6px 0; border-left: none; }
+.vt-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+
+.today-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.today-btn:hover { color: var(--text); border-color: var(--border2); }
+.today-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--crit-dot); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── MAIN ───────────────────────────────── */
+.main { padding: 2rem 2.5rem 5rem; }
+
+/* ─── MONTH ──────────────────────────────── */
+.month-block { margin-bottom: 3rem; transition: opacity .2s; }
+.month-block.dimmed { opacity: 0.15; pointer-events: none; }
+
+.month-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.month-left { display: flex; align-items: baseline; gap: 10px; }
+.month-name {
+  font-family: 'Lora', serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+.phase-badge {
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.week-count {
+  font-size: 11px;
+  color: var(--muted);
+}
+.week-count span { font-weight: 500; color: var(--text); }
+
+/* ─── CALENDAR GRID ──────────────────────── */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.dow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  text-align: center;
+  padding: 0 0 6px;
+  font-weight: 500;
+}
+.day {
+  min-height: 84px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 7px 7px 5px;
+  position: relative;
+  transition: border-color .12s;
+  cursor: default;
+}
+.day.empty { background: transparent; border-color: transparent; min-height: 0; }
+.day.has-event { border-color: var(--border2); cursor: pointer; }
+.day.has-event:hover { border-color: var(--text); }
+.day.is-today { border-color: var(--text) !important; }
+.day.is-today .dn { color: var(--text); font-weight: 500; }
+
+.dn { font-size: 11px; color: var(--faint); margin-bottom: 4px; line-height: 1; }
+
+/* week counter row */
+.week-row-count {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.wrc-label {
+  font-size: 10px;
+  color: var(--faint);
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 1px 6px;
+}
+.wrc-label.warn { color: var(--f6); background: var(--f6-bg); }
+.wrc-label.good { color: var(--f2); background: var(--f2-bg); }
+
+/* ─── CHIPS ──────────────────────────────── */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  line-height: 1.3;
+  padding: 2px 6px 2px 4px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  transition: opacity .12s;
+  cursor: pointer;
+  user-select: none;
+}
+.chip:hover { opacity: .8; }
+.chip.done { opacity: var(--done-opacity); }
+.chip.done .chip-text { text-decoration: line-through; }
+.chip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.chip-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-check { flex-shrink: 0; width: 12px; height: 12px; border-radius: 3px; border: 1px solid; display: flex; align-items: center; justify-content: center; transition: all .12s; }
+.chip-check svg { width: 8px; height: 8px; opacity: 0; }
+.chip.done .chip-check svg { opacity: 1; }
+
+.chip.p-f1   { background: var(--f1-bg);   color: var(--f1); }
+.chip.p-f1   .chip-check { border-color: var(--f1-dot); }
+.chip.p-f1   .chip-check svg { stroke: var(--f1-dot); }
+.chip.p-f2   { background: var(--f2-bg);   color: var(--f2); }
+.chip.p-f2   .chip-check { border-color: var(--f2-dot); }
+.chip.p-f2   .chip-check svg { stroke: var(--f2-dot); }
+.chip.p-f3   { background: var(--f3-bg);   color: var(--f3); }
+.chip.p-f3   .chip-check { border-color: var(--f3-dot); }
+.chip.p-f3   .chip-check svg { stroke: var(--f3-dot); }
+.chip.p-f4   { background: var(--f4-bg);   color: var(--f4); }
+.chip.p-f4   .chip-check { border-color: var(--f4-dot); }
+.chip.p-f4   .chip-check svg { stroke: var(--f4-dot); }
+.chip.p-f5   { background: var(--f5-bg);   color: var(--f5); }
+.chip.p-f5   .chip-check { border-color: var(--f5-dot); }
+.chip.p-f5   .chip-check svg { stroke: var(--f5-dot); }
+.chip.p-f6   { background: var(--f6-bg);   color: var(--f6); }
+.chip.p-f6   .chip-check { border-color: var(--f6-dot); }
+.chip.p-f6   .chip-check svg { stroke: var(--f6-dot); }
+.chip.p-crit { background: var(--crit-bg); color: var(--crit); font-weight: 500; }
+.chip.p-crit .chip-check { border-color: var(--crit-dot); }
+.chip.p-crit .chip-check svg { stroke: var(--crit-dot); }
+.chip.p-int  { background: var(--int-bg);  color: var(--int); }
+.chip.p-int  .chip-check { border-color: var(--int-dot); }
+.chip.p-int  .chip-check svg { stroke: var(--int-dot); }
+
+/* add btn */
+.add-btn {
+  display: none;
+  position: absolute;
+  bottom: 5px; right: 5px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .12s;
+}
+.day:hover .add-btn { display: flex; }
+.add-btn:hover { background: var(--text); color: var(--surface); border-color: var(--text); }
+
+/* deadline warning */
+.deadline-warn {
+  position: absolute;
+  top: 5px; right: 6px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--crit-dot);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── PHASE DIVIDER ─────────────────────── */
+.phase-div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0.5rem 0 2rem;
+}
+.pd-line { flex: 1; height: 1px; background: var(--border); }
+.pd-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+/* ─── MODAL ──────────────────────────────── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,25,22,0.45);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  animation: up .18s ease;
+}
+@keyframes up { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.modal-close {
+  position: absolute;
+  top: 14px; right: 16px;
+  background: none; border: none;
+  font-size: 20px; line-height: 1;
+  color: var(--faint); cursor: pointer;
+  transition: color .12s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-date { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+.modal-title { font-family: 'Lora', serif; font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
+
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  outline: none;
+  transition: border-color .14s;
+  resize: vertical;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus { border-color: var(--text); }
+.field select option { background: var(--surface); }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.mactions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; align-items: center; }
+.mactions .del-btn { margin-right: auto; }
+.mbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .14s;
+}
+.mbtn:hover { color: var(--text); border-color: var(--text); }
+.mbtn.primary { background: var(--text); color: var(--surface); border-color: var(--text); font-weight: 500; }
+.mbtn.primary:hover { opacity: .85; }
+.mbtn.danger { color: var(--crit); border-color: #E8C0C0; }
+.mbtn.danger:hover { background: var(--crit-bg); }
+
+/* day detail list */
+.ev-list { margin-bottom: 1rem; }
+.ev-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ev-item:last-child { border: none; }
+.ev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.ev-body { flex: 1; min-width: 0; }
+.ev-title { font-size: 13px; line-height: 1.4; }
+.ev-title.done-text { text-decoration: line-through; color: var(--muted); }
+.ev-meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+.ev-resp { display: inline-flex; align-items: center; gap: 3px; }
+.ev-acts { display: flex; gap: 5px; margin-top: 5px; }
+.sm-btn {
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .12s;
+}
+.sm-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+.sm-btn.danger { color: var(--crit); }
+.sm-btn.danger:hover { background: var(--crit-bg); }
+.sm-btn.done-btn.active { color: var(--f2); border-color: var(--f2-bg); background: var(--f2-bg); }
+
+/* assignee badge */
+.assignee-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+/* deadline near indicator on chip */
+.chip.deadline-near::after {
+  content: '!';
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--crit);
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── EVENT TYPE BADGE ──────────────────── */
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.type-badge.post          { background:#EEF6E8; color:#3A7020; border-color:#C0DCA8; }
+.type-badge.lancamento    { background:#FAEAEA; color:#8A1A1A; border-color:#E0AAAA; }
+.type-badge.gravacao      { background:#E8F0FA; color:#1A3A70; border-color:#A8C0E0; }
+.type-badge.ensaio        { background:#F4EAFB; color:#4A1A7A; border-color:#C8AADC; }
+.type-badge.sessao        { background:#FBF3E4; color:#7A4A10; border-color:#DCC080; }
+.type-badge.reuniao       { background:#F2F0EC; color:#5A5040; border-color:#C8C4BC; }
+.type-badge.acao-fisica   { background:#FAEDE8; color:#7A3010; border-color:#DCA898; }
+.type-badge.compromisso   { background:#F0F0F0; color:#404040; border-color:#C8C8C8; }
+
+.chip-type {
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  font-weight: 500;
+  line-height: 1.7;
+  margin-left: 1px;
+}
+.chip-type.post          { background:#D8EEC8; color:#2A6010; }
+.chip-type.lancamento    { background:#F0C0C0; color:#7A1010; }
+.chip-type.gravacao      { background:#C0D4F0; color:#103070; }
+.chip-type.ensaio        { background:#E0C8F0; color:#3A1060; }
+.chip-type.sessao        { background:#F0DCA8; color:#603808; }
+.chip-type.reuniao       { background:#E0DCD4; color:#484038; }
+.chip-type.acao-fisica   { background:#F0C8B8; color:#602010; }
+.chip-type.compromisso   { background:#E0E0E0; color:#383838; }
+
+/* week counter pills */
+.wrc-breakdown { display:flex; gap:4px; align-items:center; }
+.wrc-pill { font-size:10px; padding:1px 6px; border-radius:10px; white-space:nowrap; }
+.wrc-pill.posts  { background:#EEF6E8; color:#3A7020; }
+.wrc-pill.outros { background:var(--surface2); color:var(--muted); }
+
+/* type selector visual */
+.type-selector { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:4px; }
+.type-opt {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:8px 4px; border-radius:8px; border:1px solid var(--border2);
+  background:transparent; cursor:pointer; transition:all .14s;
+  font-family:'Inter',sans-serif; font-size:11px; color:var(--muted);
+  text-align:center; line-height:1.3;
+}
+.type-opt:hover { border-color:var(--border2); background:var(--surface2); color:var(--text); }
+.type-opt.selected { border-color:var(--text); background:var(--text); color:var(--surface); }
+.type-opt.selected .to-icon { filter:invert(1); }
+.to-icon { font-size:18px; line-height:1; }
+
+.gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top, rgba(160, 115, 42, 0.08), transparent 32%),
+    linear-gradient(180deg, #faf8f4 0%, #f3efe8 100%);
+}
+.gate-card {
+  width: min(460px, 100%);
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(26, 25, 22, 0.08);
+  padding: 2rem;
+}
+.gate-kicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  margin-bottom: 0.85rem;
+}
+.gate-card h2 {
+  font-family: 'Lora', serif;
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 0.6rem;
+}
+.gate-card p {
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+}
+.gate-form {
+  display: grid;
+  gap: 0.85rem;
+}
+.gate-form input {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.gate-form input:focus {
+  outline: none;
+  border-color: var(--text);
+}
+.gate-submit {
+  border: none;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--surface);
+  padding: 0.9rem 1.2rem;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.gate-submit:hover { opacity: 0.92; }
+.gate-error {
+  min-height: 20px;
+  color: var(--crit);
+  font-size: 12px;
+}
+
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.sync-pill::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.sync-pill.ok::before { background: var(--f2-dot); }
+.sync-pill.syncing::before { background: var(--f1-dot); }
+.sync-pill.error::before { background: var(--crit-dot); }
+.sync-pill.local::before { background: var(--int-dot); }
+
+.hidden { display: none !important; }
+
+/* ─── RESPONSIVE ─────────────────────────── */
+@media(max-width:640px){
+  .header, .toolbar, .main { padding-left: 1rem; padding-right: 1rem; }
+  .tagline, .sep { display: none; }
+  .day { min-height: 60px; padding: 5px; }
+  .chip { font-size: 9px; }
+  .type-selector { grid-template-columns:repeat(4,1fr); }
+}
+</style>
+</head>
+<body>
+
+<section class="gate" id="login-gate">
+  <div class="gate-card">
+    <div class="gate-kicker">Calendario interno</div>
+    <h2>Sal de Mare</h2>
+    <p>Entre com a senha da equipe para abrir o calendario compartilhado.</p>
+    <form class="gate-form" id="login-form">
+      <input id="password-input" type="password" placeholder="Digite a senha" autocomplete="current-password">
+      <button class="gate-submit" type="submit">Entrar</button>
+      <div class="gate-error" id="login-error"></div>
+    </form>
+  </div>
+</section>
+
+<div id="app-shell" class="hidden">
+
+<header class="header">
+  <div class="brand">
+    <h1>Sal de Maré</h1>
+    <p>Calendário de lançamento · Abril 2026 — Fevereiro 2027</p>
+  </div>
+  <div class="header-right">
+    <span class="tagline">Entre o sagrado e o profano, a Bahia.</span>
+    <span class="sync-pill syncing" id="sync-status">Conectando</span>
+    <button class="icon-btn" onclick="exportData()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8m0 0L5 7m3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
+      Exportar
+    </button>
+    <button class="icon-btn" onclick="importData()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2m0 0L5 5m3-3 3 3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
+      Importar
+    </button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="f-btn active" data-phase="all">Todas as fases</button>
+  <button class="f-btn" data-phase="f1"><span class="f-dot" style="background:var(--f1-dot)"></span>Maresia</button>
+  <button class="f-btn" data-phase="f2"><span class="f-dot" style="background:var(--f2-dot)"></span>Processo</button>
+  <button class="f-btn" data-phase="f3"><span class="f-dot" style="background:var(--f3-dot)"></span>Reluz</button>
+  <button class="f-btn" data-phase="f4"><span class="f-dot" style="background:var(--f4-dot)"></span>Produção</button>
+  <button class="f-btn" data-phase="f5"><span class="f-dot" style="background:var(--f5-dot)"></span>Pré-lançamento</button>
+  <button class="f-btn" data-phase="f6"><span class="f-dot" style="background:var(--f6-dot)"></span>Álbum</button>
+  <button class="f-btn" data-phase="crit"><span class="f-dot" style="background:var(--crit-dot)"></span>Marcos críticos</button>
+  <div class="sep"></div>
+  <button class="today-btn" onclick="scrollToToday()"><span class="today-pulse"></span>Hoje</button>
+  <div class="view-toggle">
+    <button class="vt-btn active" onclick="setView('month',this)">Mês</button>
+    <button class="vt-btn" onclick="setView('week',this)">Semana</button>
+  </div>
+</div>
+
+<main class="main" id="main"></main>
+
+<div class="overlay" id="overlay" onclick="closeOverlayClick(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeOverlay()">×</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<input type="file" id="file-in" accept=".json" style="display:none" onchange="handleImport(event)">
+
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const ACCESS_PASSWORD = 'saldemaredaterra';
+const SESSION_KEY = 'sdm_access_ok';
+const CACHE_KEY = 'sdm_evs';
+const FIRESTORE_COLLECTION = 'sharedCalendars';
+const FIRESTORE_DOCUMENT = 'sal-de-mare';
+const firebaseConfig = {
+  apiKey: 'AIzaSyBfD2LsIZz4h1vE3Xw0DmMqz14mdeQ82To',
+  authDomain: 'sal-calendario.firebaseapp.com',
+  projectId: 'sal-calendario',
+  storageBucket: 'sal-calendario.firebasestorage.app',
+  messagingSenderId: '471557058428',
+  appId: '1:471557058428:web:c4078bc73e0f89c5eebef9'
+};
+// ─── CONSTANTS ─────────────────────────────────────────────────────────────
+const PM = {
+  f1:  {l:'F1 — Maresia',        c:'var(--f1)',  bg:'var(--f1-bg)',  dot:'var(--f1-dot)'},
+  f2:  {l:'F2 — Processo',       c:'var(--f2)',  bg:'var(--f2-bg)',  dot:'var(--f2-dot)'},
+  f3:  {l:'F3 — Reluz',          c:'var(--f3)',  bg:'var(--f3-bg)',  dot:'var(--f3-dot)'},
+  f4:  {l:'F4 — Produção',       c:'var(--f4)',  bg:'var(--f4-bg)',  dot:'var(--f4-dot)'},
+  f5:  {l:'F5 — Pré-lançamento', c:'var(--f5)',  bg:'var(--f5-bg)',  dot:'var(--f5-dot)'},
+  f6:  {l:'F6 — Álbum',          c:'var(--f6)',  bg:'var(--f6-bg)',  dot:'var(--f6-dot)'},
+  crit:{l:'Marco crítico',        c:'var(--crit)',bg:'var(--crit-bg)',dot:'var(--crit-dot)'},
+  int: {l:'Interno',              c:'var(--int)', bg:'var(--int-bg)', dot:'var(--int-dot)'},
+};
+
+const MONTHS_DEF = [
+  {y:2026,m:3, n:'Abril 2026',    ph:'f1', target:[4,5]},
+  {y:2026,m:4, n:'Maio 2026',     ph:'f1', target:[4,5]},
+  {y:2026,m:5, n:'Junho 2026',    ph:'f2', target:[2,3]},
+  {y:2026,m:6, n:'Julho 2026',    ph:'f3', target:[4,5]},
+  {y:2026,m:7, n:'Agosto 2026',   ph:'f4', target:[1,2]},
+  {y:2026,m:8, n:'Setembro 2026', ph:'f4', target:[1,2]},
+  {y:2026,m:9, n:'Outubro 2026',  ph:'f5', target:[4,5]},
+  {y:2026,m:10,n:'Novembro 2026', ph:'f5', target:[4,5]},
+  {y:2026,m:11,n:'Dezembro 2026', ph:'f6', target:[5,7]},
+  {y:2027,m:0, n:'Janeiro 2027',  ph:'f6', target:[3,4]},
+  {y:2027,m:1, n:'Fevereiro 2027',ph:'f6', target:[3,4]},
+];
+
+const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+const TEAM = ['—','João','Conteúdo','Produção','Direção','Social','Todos'];
+
+const EVENT_TYPES = {
+  post:        { label:'Post',           icon:'📱', countAsPost: true  },
+  lancamento:  { label:'Lançamento',     icon:'🚀', countAsPost: true  },
+  gravacao:    { label:'Gravação',       icon:'🎙', countAsPost: false },
+  ensaio:      { label:'Ensaio',         icon:'🥁', countAsPost: false },
+  sessao:      { label:'Sessão estúdio', icon:'🎵', countAsPost: false },
+  reuniao:     { label:'Reunião',        icon:'🤝', countAsPost: false },
+  'acao-fisica':{ label:'Ação física',   icon:'📍', countAsPost: false },
+  compromisso: { label:'Compromisso',    icon:'📌', countAsPost: false },
+};
+
+const DEFAULT_EVS = {
+  '2026-04-17':[{p:'f1',t:'Teasers sensoriais — início da semana 0',r:'Conteúdo',done:false,note:''}],
+  '2026-04-18':[{p:'f1',t:'Teaser: fragmento visual',r:'Conteúdo',done:false,note:''}],
+  '2026-04-20':[{p:'f1',t:'Teaser: textura + instrumento',r:'Conteúdo',done:false,note:''}],
+  '2026-04-22':[{p:'f1',t:'Conexão: câmera amigo da banda',r:'Conteúdo',done:false,note:''}],
+  '2026-04-24':[{p:'f1',t:'Dump fotográfico do processo',r:'Conteúdo',done:false,note:''}],
+  '2026-04-26':[{p:'f1',t:'Versão minimalista — voz + percussão',r:'Produção',done:false,note:''}],
+  '2026-04-28':[{p:'f1',t:'Processo criativo: tentativa e erro',r:'Conteúdo',done:false,note:''}],
+  '2026-05-01':[{p:'f1',t:'Prévia — Coração de Bola',r:'Conteúdo',done:false,note:''}],
+  '2026-05-03':[{p:'crit',t:'LANÇAMENTO — Coração de Bola',r:'Todos',done:false,note:'Às 6h da manhã'}],
+  '2026-05-05':[{p:'f1',t:'Post lançamento completo',r:'Social',done:false,note:''}],
+  '2026-05-06':[{p:'f1',t:'Bastidor + processo — Vumbora Amar',r:'Conteúdo',done:false,note:''}],
+  '2026-05-08':[{p:'f1',t:'Prévia — Vumbora Amar',r:'Conteúdo',done:false,note:''}],
+  '2026-05-10':[{p:'crit',t:'LANÇAMENTO — Vumbora Amar',r:'Todos',done:false,note:'Às 6h da manhã'}],
+  '2026-05-13':[{p:'f1',t:'Vem — conteúdo de ambiente',r:'Conteúdo',done:false,note:''}],
+  '2026-05-15':[{p:'f1',t:'Vem — identidade emocional',r:'Conteúdo',done:false,note:''}],
+  '2026-05-17':[{p:'crit',t:'LANÇAMENTO — Vem',r:'Todos',done:false,note:'Às 6h da manhã'}],
+  '2026-05-20':[{p:'f1',t:'Encerramento EP — desaceleração',r:'Direção',done:false,note:''}],
+  '2026-05-21':[{p:'f1',t:'Bastidores — recompensa pra quem acompanhou',r:'Conteúdo',done:false,note:''}],
+  '2026-05-23':[{p:'crit',t:'LANÇAMENTO — Já é + Topo do Mundo',r:'Todos',done:false,note:'Às 6h da manhã'}],
+  '2026-05-24':[{p:'f1',t:'Audiovisual completo',r:'Produção',done:false,note:''}],
+  '2026-05-25':[{p:'f1',t:'Mini doc narrativo do EP',r:'Direção',done:false,note:''}],
+  '2026-05-26':[{p:'int',t:'Início pré-produção do álbum',r:'João',done:false,note:''}],
+  '2026-05-28':[{p:'int',t:'Composição Reluz — ativa',r:'João',done:false,note:''}],
+  '2026-06-01':[{p:'f2',t:'Composição álbum — sessão 1',r:'João',done:false,note:'Mínimo 2 sessões/semana'}],
+  '2026-06-03':[{p:'f2',t:'Conteúdo orgânico São João',r:'Conteúdo',done:false,note:''}],
+  '2026-06-08':[{p:'f2',t:'Composição álbum — sessão 2',r:'João',done:false,note:''}],
+  '2026-06-10':[{p:'f2',t:'Testes de arranjo das faixas',r:'Produção',done:false,note:''}],
+  '2026-06-13':[{p:'int',t:'Fechar backing vocal Reluz',r:'João',done:false,note:''}],
+  '2026-06-15':[{p:'f2',t:'Composição — sessão 3',r:'João',done:false,note:''}],
+  '2026-06-17':[{p:'f2',t:'Post humanização — quem é a banda',r:'Conteúdo',done:false,note:''}],
+  '2026-06-20':[{p:'int',t:'Confirmar trompetista + mixer baiano',r:'João',done:false,note:''}],
+  '2026-06-22':[{p:'f2',t:'Composição — sessão 4',r:'João',done:false,note:''}],
+  '2026-06-24':[{p:'f2',t:'Testes de arranjo — fechamento',r:'Produção',done:false,note:''}],
+  '2026-06-27':[{p:'int',t:'Fechar repertório completo do álbum',r:'João',done:false,note:''}],
+  '2026-06-29':[{p:'int',t:'Planejamento financeiro da gravação',r:'João',done:false,note:''}],
+  '2026-07-04':[{p:'f3',t:'Gravação: base rítmica',r:'Produção',done:false,note:'Hierarquia de gravação — ver doc'}],
+  '2026-07-05':[{p:'f3',t:'Gravação: bateria',r:'Produção',done:false,note:''}],
+  '2026-07-06':[{p:'f3',t:'Gravação: baixo + harmonia',r:'Produção',done:false,note:''}],
+  '2026-07-07':[{p:'f3',t:'Gravação: voz principal',r:'João',done:false,note:''}],
+  '2026-07-08':[{p:'f3',t:'Gravação: backing vocal + sopros',r:'Produção',done:false,note:''}],
+  '2026-07-09':[{p:'f3',t:'Gravação: texturas + detalhes',r:'Produção',done:false,note:''}],
+  '2026-07-12':[{p:'int',t:'Identidade visual Reluz — definição',r:'Direção',done:false,note:''}],
+  '2026-07-15':[{p:'f3',t:'Vídeo lírico — gravação em Salvador',r:'Conteúdo',done:false,note:''}],
+  '2026-07-18':[{p:'f3',t:'Post silencioso — data sem contexto',r:'Social',done:false,note:''}],
+  '2026-07-19':[{p:'f3',t:'Fragmento 7s — postado às 6h da manhã',r:'Social',done:false,note:''}],
+  '2026-07-20':[{p:'crit',t:'LANÇAMENTO — Reluz · às 6h',r:'Todos',done:false,note:'Hora da maré. Fragmento 7s às 6h. Post principal às 6h.'}],
+  '2026-07-21':[{p:'f3',t:'Stories: história real de como nasceu',r:'João',done:false,note:''}],
+  '2026-07-23':[{p:'f3',t:'Percussão isolada — post derivado',r:'Conteúdo',done:false,note:''}],
+  '2026-07-25':[{p:'f3',t:'"Onde você ouviu pela 1ª vez?" — stories',r:'Social',done:false,note:''}],
+  '2026-07-27':[{p:'f3',t:'Compilado das respostas reais',r:'Social',done:false,note:''}],
+  '2026-07-29':[{p:'f3',t:'Versão ao vivo simples',r:'Conteúdo',done:false,note:''}],
+  '2026-08-03':[{p:'f4',t:'Gravação bloco 1 — dia 1',r:'Produção',done:false,note:''}],
+  '2026-08-04':[{p:'f4',t:'Gravação bloco 1 — dia 2',r:'Produção',done:false,note:''}],
+  '2026-08-05':[{p:'f4',t:'Gravação bloco 1 — dia 3',r:'Produção',done:false,note:''}],
+  '2026-08-08':[{p:'f4',t:'Post bastidor estúdio',r:'Conteúdo',done:false,note:''}],
+  '2026-08-10':[{p:'f4',t:'Gravação bloco 2 — dia 1',r:'Produção',done:false,note:''}],
+  '2026-08-11':[{p:'f4',t:'Gravação bloco 2 — dia 2',r:'Produção',done:false,note:''}],
+  '2026-08-12':[{p:'f4',t:'Gravação bloco 2 — dia 3',r:'Produção',done:false,note:''}],
+  '2026-08-15':[{p:'f4',t:'Post processo real',r:'Conteúdo',done:false,note:''}],
+  '2026-08-17':[{p:'f4',t:'Gravação bloco 3 — dia 1',r:'Produção',done:false,note:''}],
+  '2026-08-18':[{p:'f4',t:'Gravação bloco 3 — dia 2',r:'Produção',done:false,note:''}],
+  '2026-08-19':[{p:'f4',t:'Gravação bloco 3 — dia 3',r:'Produção',done:false,note:''}],
+  '2026-08-22':[{p:'int',t:'Capa do álbum — desenvolvimento',r:'Direção',done:false,note:''}],
+  '2026-08-24':[{p:'f4',t:'Post bastidor',r:'Conteúdo',done:false,note:''}],
+  '2026-08-26':[{p:'f4',t:'Gravação bloco 4 — dia 1',r:'Produção',done:false,note:''}],
+  '2026-08-27':[{p:'f4',t:'Gravação bloco 4 — dia 2',r:'Produção',done:false,note:''}],
+  '2026-08-28':[{p:'f4',t:'Gravação bloco 4 — dia 3',r:'Produção',done:false,note:''}],
+  '2026-09-02':[{p:'f4',t:'Gravação bloco 5 — dia 1',r:'Produção',done:false,note:''}],
+  '2026-09-03':[{p:'f4',t:'Gravação bloco 5 — dia 2',r:'Produção',done:false,note:''}],
+  '2026-09-04':[{p:'f4',t:'Gravação bloco 5 — dia 3',r:'Produção',done:false,note:''}],
+  '2026-09-07':[{p:'f4',t:'Post processo de gravação',r:'Conteúdo',done:false,note:''}],
+  '2026-09-09':[{p:'f4',t:'Gravação bloco 6 — dia 1',r:'Produção',done:false,note:''}],
+  '2026-09-10':[{p:'f4',t:'Gravação bloco 6 — dia 2',r:'Produção',done:false,note:''}],
+  '2026-09-11':[{p:'f4',t:'Gravação bloco 6 — dia 3',r:'Produção',done:false,note:''}],
+  '2026-09-14':[{p:'int',t:'Mixagem — início',r:'Produção',done:false,note:''}],
+  '2026-09-16':[{p:'f4',t:'Post bastidor final de gravação',r:'Conteúdo',done:false,note:''}],
+  '2026-09-21':[{p:'int',t:'Mixagem + masterização em andamento',r:'Produção',done:false,note:''}],
+  '2026-09-28':[{p:'int',t:'Álbum entregue para masterização',r:'João',done:false,note:''}],
+  '2026-10-01':[{p:'f5',t:'Era Sagrado e Profano — ativa',r:'Direção',done:false,note:''}],
+  '2026-10-03':[{p:'f5',t:'Sinal visual da era — grid muda',r:'Social',done:false,note:''}],
+  '2026-10-05':[{p:'f5',t:'Frase-âncora começa a circular',r:'Social',done:false,note:''}],
+  '2026-10-07':[{p:'f5',t:'Cartazes Salvador — 1ª rodada',r:'Produção',done:false,note:''}],
+  '2026-10-10':[{p:'f5',t:'Teaser Single 1 — 48h antes',r:'Social',done:false,note:''}],
+  '2026-10-11':[{p:'f5',t:'Fragmento 7s — 6h manhã',r:'Social',done:false,note:''}],
+  '2026-10-12':[{p:'crit',t:'LANÇAMENTO — Single 1 · às 6h',r:'Todos',done:false,note:'Mesma estrutura da Reluz'}],
+  '2026-10-14':[{p:'f5',t:'Stories + bastidor do Single 1',r:'Conteúdo',done:false,note:''}],
+  '2026-10-17':[{p:'f5',t:'Compilado respostas Single 1',r:'Social',done:false,note:''}],
+  '2026-10-19':[{p:'f5',t:'Conteúdo de rua — Salvador vivo',r:'Conteúdo',done:false,note:''}],
+  '2026-10-21':[{p:'int',t:'Objeto físico da era — produção',r:'Direção',done:false,note:''}],
+  '2026-10-24':[{p:'f5',t:'Teasers paleta + símbolo do álbum',r:'Social',done:false,note:''}],
+  '2026-10-28':[{p:'f5',t:'Ações espaços culturais Salvador',r:'Direção',done:false,note:''}],
+  '2026-11-01':[{p:'f5',t:'Conteúdo sensorial intenso',r:'Conteúdo',done:false,note:''}],
+  '2026-11-04':[{p:'f5',t:'Teaser Single 2 — 48h antes',r:'Social',done:false,note:''}],
+  '2026-11-05':[{p:'f5',t:'Fragmento 7s — 6h manhã',r:'Social',done:false,note:''}],
+  '2026-11-06':[{p:'crit',t:'LANÇAMENTO — Single 2 · às 6h',r:'Todos',done:false,note:''}],
+  '2026-11-08':[{p:'f5',t:'Stories narrativa Single 2',r:'João',done:false,note:''}],
+  '2026-11-11':[{p:'f5',t:'Compilado respostas Single 2',r:'Social',done:false,note:''}],
+  '2026-11-14':[{p:'crit',t:'ANÚNCIO OFICIAL — data do álbum',r:'Todos',done:false,note:'Só anuncia quando 100% confirmado'}],
+  '2026-11-16':[{p:'f5',t:'Cartazes Salvador — 2ª rodada',r:'Produção',done:false,note:''}],
+  '2026-11-21':[{p:'int',t:'Escuta coletiva — preparação',r:'Direção',done:false,note:''}],
+  '2026-11-23':[{p:'int',t:'Vídeo-manifesto — produção',r:'Direção',done:false,note:''}],
+  '2026-11-25':[{p:'int',t:'Objeto físico da era — distribuição',r:'Produção',done:false,note:''}],
+  '2026-11-28':[{p:'f5',t:'Ativações festas + espaços culturais',r:'Direção',done:false,note:''}],
+  '2026-12-05':[{p:'f6',t:'Escuta coletiva presencial em Salvador',r:'Direção',done:false,note:''}],
+  '2026-12-08':[{p:'f6',t:'Vídeo-manifesto no ar',r:'Social',done:false,note:''}],
+  '2026-12-10':[{p:'f6',t:'Compilado do público — publicado',r:'Social',done:false,note:''}],
+  '2026-12-12':[{p:'crit',t:'LANÇAMENTO DO ÁLBUM · às 6h',r:'Todos',done:false,note:'O momento. Tudo está pronto.'}],
+  '2026-12-13':[{p:'f6',t:'Live de escuta coletiva online',r:'Todos',done:false,note:''}],
+  '2026-12-14':[{p:'f6',t:'Posts múltiplos — semana do álbum',r:'Social',done:false,note:''}],
+  '2026-12-15':[{p:'crit',t:'SHOW DE LANÇAMENTO',r:'Todos',done:false,note:''}],
+  '2026-12-16':[{p:'f6',t:'Posts diários — identidade preservada',r:'Social',done:false,note:''}],
+  '2026-12-21':[{p:'f6',t:'Série por faixas — início',r:'Conteúdo',done:false,note:''}],
+  '2026-12-23':[{p:'f6',t:'Faixa 1 — Voltar pra Lá: história',r:'João',done:false,note:''}],
+  '2026-12-26':[{p:'f6',t:'Faixa 2 — Valente: história',r:'João',done:false,note:''}],
+  '2026-12-28':[{p:'f6',t:'Show editado com estética da era',r:'Conteúdo',done:false,note:''}],
+  '2027-01-03':[{p:'f6',t:'Faixa 3 — Não Me Deixe: história',r:'João',done:false,note:''}],
+  '2027-01-07':[{p:'f6',t:'Faixa 4 — Convencer: história',r:'João',done:false,note:''}],
+  '2027-01-10':[{p:'f6',t:'Engajamento versões do público',r:'Social',done:false,note:''}],
+  '2027-01-12':[{p:'f6',t:'Faixa 5 — Só Você: história',r:'João',done:false,note:''}],
+  '2027-01-17':[{p:'f6',t:'Faixa 6 — Lua: história',r:'João',done:false,note:''}],
+  '2027-01-21':[{p:'f6',t:'Faixa 7 — Feitiço: história',r:'João',done:false,note:''}],
+  '2027-01-24':[{p:'f6',t:'Show editado — era consolidada',r:'Conteúdo',done:false,note:''}],
+  '2027-01-31':[{p:'f6',t:'América Latina — expansão ativa',r:'Direção',done:false,note:''}],
+  '2027-02-07':[{p:'f6',t:'Série final de faixas',r:'João',done:false,note:''}],
+  '2027-02-14':[{p:'f6',t:'Show carnaval — era viva',r:'Todos',done:false,note:''}],
+  '2027-02-22':[{p:'f6',t:'Comunidade consolidada',r:'Direção',done:false,note:''}],
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let EVS = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null') || JSON.parse(JSON.stringify(DEFAULT_EVS));
+let db = null;
+let calendarRef = null;
+let unsubscribeSnapshot = null;
+let syncReady = false;
+let syncStarted = false;
+let saveTimer = null;
+
+// Migrate old events without tp field — infer type from context
+function migrateEvents(evs) {
+  Object.values(evs).forEach(dayEvs => {
+    dayEvs.forEach(e => {
+      if(!e.tp) {
+        const t = e.t.toLowerCase();
+        if(t.includes('lançamento') || t.includes('lancamento')) e.tp = 'lancamento';
+        else if(t.includes('gravação') || t.includes('gravacao') || t.includes('gravar') || t.includes('bloco')) e.tp = 'gravacao';
+        else if(t.includes('ensaio')) e.tp = 'ensaio';
+        else if(t.includes('sessão') || t.includes('sessao') || t.includes('composição') || t.includes('composicao')) e.tp = 'sessao';
+        else if(t.includes('mixagem') || t.includes('masterização') || t.includes('pré-produção') || t.includes('arranjo')) e.tp = 'sessao';
+        else if(t.includes('cartaz') || t.includes('escuta coletiva') || t.includes('objeto físico') || t.includes('ativação')) e.tp = 'acao-fisica';
+        else if(e.p === 'int') e.tp = 'compromisso';
+        else e.tp = 'post';
+      }
+    });
+  });
+  return evs;
+}
+
+EVS = migrateEvents(EVS);
+let filter = 'all';
+let viewMode = 'month';
+const today = new Date();
+
+function setSyncStatus(kind, text) {
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  el.className = `sync-pill ${kind}`;
+  el.textContent = text;
+}
+function persistCache() { localStorage.setItem(CACHE_KEY, JSON.stringify(EVS)); }
+function save() {
+  persistCache();
+  if(!syncReady || !calendarRef) {
+    setSyncStatus('local', 'Salvo localmente');
+    return;
+  }
+  setSyncStatus('syncing', 'Sincronizando');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushEventsToFirestore, 250);
+}
+async function pushEventsToFirestore() {
+  if(!calendarRef) return;
+  try {
+    await setDoc(calendarRef, {
+      events: EVS,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    setSyncStatus('ok', 'Sincronizado');
+  } catch (error) {
+    console.error(error);
+    setSyncStatus('error', 'Erro ao sincronizar');
+  }
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtKey(y,m,d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
+function keyLabel(key) {
+  const [y,m,d]=key.split('-');
+  return `${parseInt(d)} de ${MONTHS_PT[parseInt(m)-1]}, ${y}`;
+}
+function isNearDeadline(key) {
+  const d = new Date(key+'T00:00:00');
+  const diff = (d - today) / 86400000;
+  return diff >= 0 && diff <= 3;
+}
+
+// ─── WEEK COUNT ──────────────────────────────────────────────────────────
+function countPostsInWeek(y, m, weekStart, weekEnd, target) {
+  let count = 0;
+  for(let d = weekStart; d <= weekEnd; d++) {
+    const key = fmtKey(y, m, d);
+    const evs = EVS[key] || [];
+    evs.forEach(e => { if(EVENT_TYPES[e.tp]?.countAsPost) count++; });
+  }
+  return count;
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────
+function buildAll() {
+  const container = document.getElementById('main');
+  container.innerHTML = '';
+
+  if(viewMode === 'week') { buildWeekView(container); return; }
+
+  let prevPh = null;
+  MONTHS_DEF.forEach(({y,m,n,ph,target}) => {
+    const p = PM[ph];
+
+    if(ph !== prevPh) {
+      const div = document.createElement('div');
+      div.className = 'phase-div';
+      div.innerHTML = `<div class="pd-line"></div><div class="pd-label" style="color:${p.c}">${p.l}</div><div class="pd-line"></div>`;
+      container.appendChild(div);
+      prevPh = ph;
+    }
+
+    const block = document.createElement('div');
+    block.className = 'month-block';
+    block.dataset.ph = ph;
+    block.id = `m-${y}-${m}`;
+
+    // count posts this month
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    let totalPosts = 0, totalOther = 0;
+    for(let d=1;d<=daysInMonth;d++){
+      (EVS[fmtKey(y,m,d)]||[]).forEach(e=>{
+        if(EVENT_TYPES[e.tp]?.countAsPost) totalPosts++;
+        else totalOther++;
+      });
+    }
+    const weeks = Math.ceil(daysInMonth / 7);
+    const postsPerWeek = weeks > 0 ? (totalPosts / weeks).toFixed(1) : '0';
+
+    block.innerHTML = `<div class="month-head">
+      <div class="month-left">
+        <span class="month-name">${n}</span>
+        <span class="phase-badge" style="color:${p.c};background:${p.bg};border:1px solid ${p.dot}22">${p.l}</span>
+      </div>
+      <span class="week-count"><span>${postsPerWeek}</span> posts/semana · meta: ${target[0]}–${target[1]}</span>
+    </div>`;
+
+    const cal = document.createElement('div');
+    cal.className = 'cal';
+    DAYS_PT.forEach(d=>{ cal.innerHTML+=`<div class="dow">${d}</div>`; });
+
+    const firstDay = new Date(y,m,1).getDay();
+    const dim = new Date(y,m+1,0).getDate();
+
+    // build weeks with counters
+    const cells = [];
+    for(let i=0;i<firstDay;i++) cells.push(null);
+    for(let d=1;d<=dim;d++) cells.push(d);
+
+    let weekPostCount = 0;
+    let weekStart = null;
+    let weekCells = [];
+
+    cells.forEach((d, idx) => {
+      const dayOfWeek = idx % 7;
+
+      if(dayOfWeek === 0) {
+        if(weekCells.length && weekStart!==null) {
+          appendWeekRow(cal, weekCells, y, m, weekStart, weekPostCount, target);
+        }
+        weekCells = [];
+        weekPostCount = 0;
+        weekStart = d;
+      }
+
+      if(d === null) {
+        weekCells.push(null);
+      } else {
+        const key = fmtKey(y,m,d);
+        const evs = EVS[key]||[];
+        weekPostCount += evs.filter(e=>EVENT_TYPES[e.tp]?.countAsPost).length;
+        const isToday = today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+        weekCells.push({d, key, evs, isToday});
+      }
+
+      if(idx===cells.length-1) {
+        while(weekCells.length<7) weekCells.push(null);
+        appendWeekRow(cal, weekCells, y, m, weekStart, weekPostCount, target);
+      }
+    });
+
+    block.appendChild(cal);
+    container.appendChild(block);
+  });
+
+  applyFilter(filter, false);
+}
+
+function appendWeekRow(cal, weekCells, y, m, weekStart, postCount, target) {
+  // week post count label — count only post/lancamento types
+  let realPostCount = 0;
+  let otherCount = 0;
+  weekCells.forEach(cell => {
+    if(!cell) return;
+    (EVS[cell.key]||[]).forEach(e => {
+      if(EVENT_TYPES[e.tp]?.countAsPost) realPostCount++;
+      else otherCount++;
+    });
+  });
+
+  const countRow = document.createElement('div');
+  countRow.style.cssText = 'grid-column:1/-1;display:flex;justify-content:flex-end;gap:4px;padding:2px 2px 0;';
+
+  if(weekStart !== null && (realPostCount > 0 || otherCount > 0)) {
+    let postsClass = realPostCount < target[0] ? 'warn' : 'good';
+    let html = '';
+    if(realPostCount > 0) {
+      html += `<span class="wrc-pill posts">${realPostCount} post${realPostCount!==1?'s':''}</span>`;
+    }
+    if(otherCount > 0) {
+      html += `<span class="wrc-pill outros">${otherCount} outro${otherCount!==1?'s':''}</span>`;
+    }
+    if(realPostCount > 0) {
+      html += `<span class="wrc-label ${postsClass}">meta: ${target[0]}–${target[1]}</span>`;
+    }
+    countRow.innerHTML = html;
+    cal.appendChild(countRow);
+  }
+
+  weekCells.forEach(cell => {
+    const el = document.createElement('div');
+    if(!cell) {
+      el.className='day empty'; cal.appendChild(el); return;
+    }
+    const {d, key, evs, isToday} = cell;
+    const hasCrit = evs.some(e=>e.p==='crit');
+    const hasDeadline = hasCrit && isNearDeadline(key);
+
+    el.className='day'+(isToday?' is-today':'')+(evs.length?' has-event':'');
+    el.dataset.key=key;
+    el.dataset.label=keyLabel(key);
+
+    if(hasDeadline) {
+      const w=document.createElement('div');w.className='deadline-warn';el.appendChild(w);
+    }
+
+    const dn=document.createElement('div');dn.className='dn';dn.textContent=d;el.appendChild(dn);
+
+    evs.forEach((e,i)=>{
+      const chip=document.createElement('div');
+      const tp = e.tp || 'post';
+      const tpMeta = EVENT_TYPES[tp] || EVENT_TYPES.post;
+      chip.className=`chip p-${e.p}`+(e.done?' done':'')+(isNearDeadline(key)&&e.p==='crit'?' deadline-near':'');
+      chip.dataset.key=key; chip.dataset.idx=i;
+      chip.innerHTML=`<span class="chip-dot" style="background:${PM[e.p]?.dot||'var(--int-dot)'}"></span><span class="chip-text">${e.t}</span><span class="chip-type ${tp}" title="${tpMeta.label}">${tpMeta.icon}</span><span class="chip-check"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,4 3,6 7,2"/></svg></span>`;
+      chip.querySelector('.chip-check').addEventListener('click', ev=>{ev.stopPropagation();toggleDone(key,i);});
+      chip.addEventListener('click', ev=>{ev.stopPropagation();openEdit(key,i);});
+      el.appendChild(chip);
+    });
+
+    const addBtn=document.createElement('button');addBtn.className='add-btn';addBtn.textContent='+';
+    addBtn.title='Adicionar evento';
+    addBtn.addEventListener('click', ev=>{ev.stopPropagation();openAdd(key,el.dataset.label);});
+    el.appendChild(addBtn);
+
+    if(evs.length) el.addEventListener('click', ()=>openDay(key,el.dataset.label));
+    cal.appendChild(el);
+  });
+}
+
+// ─── WEEK VIEW ────────────────────────────────────────────────────────────
+function buildWeekView(container) {
+  const thisMonday = new Date(today);
+  thisMonday.setDate(today.getDate() - (today.getDay()||7) + 1);
+
+  for(let w=0; w<8; w++) {
+    const weekStart = new Date(thisMonday);
+    weekStart.setDate(thisMonday.getDate() + w*7);
+
+    const weekDiv = document.createElement('div');
+    weekDiv.style.cssText = 'margin-bottom:2rem';
+
+    const weekLabel = weekStart.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+    weekDiv.innerHTML = `<div style="font-family:'Lora',serif;font-size:15px;font-weight:500;margin-bottom:10px;color:var(--muted)">Semana de ${weekLabel}</div>`;
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px';
+
+    DAYS_PT.forEach(d=>{ grid.innerHTML+=`<div class="dow">${d}</div>`; });
+
+    for(let d=0;d<7;d++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate()+d);
+      const key = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+      const evs = EVS[key]||[];
+      const isToday = date.toDateString()===today.toDateString();
+
+      const cell=document.createElement('div');
+      cell.className='day'+(isToday?' is-today':'')+(evs.length?' has-event':'');
+      cell.style.minHeight='110px';
+      cell.dataset.key=key;
+
+      const dn=document.createElement('div');
+      dn.className='dn';
+      dn.textContent=date.getDate()+' '+MONTHS_PT[date.getMonth()].slice(0,3);
+      cell.appendChild(dn);
+
+      evs.forEach((e,i)=>{
+        const chip=document.createElement('div');
+        const tp = e.tp || 'post';
+        const tpMeta = EVENT_TYPES[tp] || EVENT_TYPES.post;
+        chip.className=`chip p-${e.p}`+(e.done?' done':'');
+        chip.innerHTML=`<span class="chip-dot" style="background:${PM[e.p]?.dot||'var(--int-dot)'}"></span><span class="chip-text">${e.t}</span><span class="chip-type ${tp}" title="${tpMeta.label}">${tpMeta.icon}</span><span class="chip-check"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,4 3,6 7,2"/></svg></span>`;
+        chip.querySelector('.chip-check').addEventListener('click', ev=>{ev.stopPropagation();toggleDone(key,i);});
+        chip.addEventListener('click', ev=>{ev.stopPropagation();openEdit(key,i);});
+        cell.appendChild(chip);
+      });
+
+      const addBtn=document.createElement('button');addBtn.className='add-btn';addBtn.textContent='+';
+      addBtn.addEventListener('click', ev=>{ev.stopPropagation();openAdd(key,key);});
+      cell.appendChild(addBtn);
+      if(evs.length) cell.addEventListener('click',()=>openDay(key,key));
+      grid.appendChild(cell);
+    }
+    weekDiv.appendChild(grid);
+    container.appendChild(weekDiv);
+  }
+}
+
+// ─── TOGGLE DONE ──────────────────────────────────────────────────────────
+function toggleDone(key, idx) {
+  if(EVS[key]&&EVS[key][idx]) {
+    EVS[key][idx].done = !EVS[key][idx].done;
+    save(); buildAll();
+  }
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────
+function openOverlay()  { document.getElementById('overlay').classList.add('open'); }
+function closeOverlay() { document.getElementById('overlay').classList.remove('open'); }
+function closeOverlayClick(e) { if(e.target===document.getElementById('overlay')) closeOverlay(); }
+
+function teamOptions(sel='—') {
+  return TEAM.map(t=>`<option${t===sel?' selected':''}>${t}</option>`).join('');
+}
+function phaseOptions(sel='f1') {
+  return Object.entries(PM).map(([k,v])=>`<option value="${k}"${k===sel?' selected':''}>${v.l}</option>`).join('');
+}
+
+function typeOptions(sel='post') {
+  return Object.entries(EVENT_TYPES).map(([k,v])=>
+    `<option value="${k}"${k===sel?' selected':''}>${v.icon} ${v.label}${v.countAsPost?' (conta como post)':''}</option>`
+  ).join('');
+}
+
+function typeSelector(sel='post') {
+  return `<div class="type-selector" id="type-sel">` +
+    Object.entries(EVENT_TYPES).map(([k,v])=>
+      `<button type="button" class="type-opt${k===sel?' selected':''}" data-type="${k}" onclick="selectType('${k}')">
+        <span class="to-icon">${v.icon}</span>
+        <span>${v.label}</span>
+      </button>`
+    ).join('') + `</div>`;
+}
+
+function selectType(k) {
+  document.querySelectorAll('.type-opt').forEach(b=>b.classList.toggle('selected', b.dataset.type===k));
+  const hidden = document.getElementById('ev-tp');
+  if(hidden) hidden.value = k;
+}
+
+function openDay(key, label) {
+  const evs = EVS[key]||[];
+  let html=`<div class="modal-date">${label}</div><div class="modal-title">Eventos do dia</div><div class="ev-list">`;
+  evs.forEach((e,i)=>{
+    const pm=PM[e.p]||PM.int;
+    const tp = e.tp || 'post';
+    const tpMeta = EVENT_TYPES[tp] || EVENT_TYPES.post;
+    html+=`<div class="ev-item">
+      <div class="ev-dot" style="background:${pm.dot}"></div>
+      <div class="ev-body">
+        <div class="ev-title${e.done?' done-text':''}">
+          ${e.t}
+          <span class="type-badge ${tp}" style="margin-left:6px">${tpMeta.icon} ${tpMeta.label}</span>
+        </div>
+        <div class="ev-meta">
+          <span>${pm.l}</span>
+          ${e.r&&e.r!=='—'?`<span class="ev-resp">· ${e.r}</span>`:''}
+          ${e.done?'<span style="color:var(--f2)">· Concluído</span>':''}
+          ${tpMeta.countAsPost?'<span style="color:var(--f2-dot)">· conta como post</span>':''}
+        </div>
+        ${e.note?`<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">${e.note}</div>`:''}
+        <div class="ev-acts">
+          <button class="sm-btn done-btn${e.done?' active':''}" onclick="toggleDone('${key}',${i});openDay('${key}','${label}')">${e.done?'Reabrir':'Concluir'}</button>
+          <button class="sm-btn" onclick="openEdit('${key}',${i})">Editar</button>
+          <button class="sm-btn danger" onclick="deleteEv('${key}',${i})">Remover</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  html+=`</div><div style="display:flex;gap:8px;justify-content:space-between">
+    <button class="mbtn" onclick="openAdd('${key}','${label}')">+ Novo evento</button>
+    <button class="mbtn primary" onclick="closeOverlay()">Fechar</button>
+  </div>`;
+  document.getElementById('modal-body').innerHTML=html;
+  openOverlay();
+}
+
+function openAdd(key, label) {
+  document.getElementById('modal-body').innerHTML=`
+    <div class="modal-date">${label}</div>
+    <div class="modal-title">Novo evento</div>
+    <div class="field"><label>Tipo de compromisso</label>
+      ${typeSelector('post')}
+      <input type="hidden" id="ev-tp" value="post">
+    </div>
+    <div class="field"><label>Descrição</label>
+      <input id="ev-t" type="text" placeholder="Descreva o evento"></div>
+    <div class="field-row">
+      <div class="field"><label>Fase</label><select id="ev-p">${phaseOptions()}</select></div>
+      <div class="field"><label>Responsável</label><select id="ev-r">${teamOptions()}</select></div>
+    </div>
+    <div class="field"><label>Nota interna (opcional)</label>
+      <textarea id="ev-n" rows="2" placeholder="Links, observações, contexto..."></textarea></div>
+    <div class="mactions">
+      <button class="mbtn" onclick="closeOverlay()">Cancelar</button>
+      <button class="mbtn primary" onclick="saveNew('${key}','${label}')">Adicionar</button>
+    </div>`;
+  openOverlay();
+  setTimeout(()=>document.getElementById('ev-t').focus(),60);
+  document.getElementById('ev-t').addEventListener('keydown',e=>{if(e.key==='Enter')saveNew(key,label);});
+}
+
+function saveNew(key, label) {
+  const t=document.getElementById('ev-t').value.trim();
+  const p=document.getElementById('ev-p').value;
+  const r=document.getElementById('ev-r').value;
+  const note=document.getElementById('ev-n').value.trim();
+  const tp=document.getElementById('ev-tp').value||'post';
+  if(!t) { document.getElementById('ev-t').focus(); return; }
+  if(!EVS[key]) EVS[key]=[];
+  EVS[key].push({p,t,r,tp,done:false,note});
+  save(); buildAll(); closeOverlay();
+}
+
+function openEdit(key, idx) {
+  const e=(EVS[key]||[])[idx]; if(!e) return;
+  const tp = e.tp || 'post';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="modal-date">${keyLabel(key)}</div>
+    <div class="modal-title">Editar evento</div>
+    <div class="field"><label>Tipo de compromisso</label>
+      ${typeSelector(tp)}
+      <input type="hidden" id="ev-tp" value="${tp}">
+    </div>
+    <div class="field"><label>Descrição</label>
+      <input id="ev-t" type="text" value="${e.t.replace(/"/g,'&quot;')}"></div>
+    <div class="field-row">
+      <div class="field"><label>Fase</label><select id="ev-p">${phaseOptions(e.p)}</select></div>
+      <div class="field"><label>Responsável</label><select id="ev-r">${teamOptions(e.r||'—')}</select></div>
+    </div>
+    <div class="field"><label>Nota interna</label>
+      <textarea id="ev-n" rows="2">${e.note||''}</textarea></div>
+    <div class="mactions">
+      <button class="mbtn danger del-btn" onclick="deleteEv('${key}',${idx})">Remover</button>
+      <button class="mbtn" onclick="closeOverlay()">Cancelar</button>
+      <button class="mbtn primary" onclick="saveEdit('${key}',${idx})">Salvar</button>
+    </div>`;
+  openOverlay();
+  setTimeout(()=>{ const el=document.getElementById('ev-t'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); },60);
+}
+
+function saveEdit(key, idx) {
+  const t=document.getElementById('ev-t').value.trim();
+  const tp=document.getElementById('ev-tp').value||'post';
+  if(!t) return;
+  EVS[key][idx]={
+    ...EVS[key][idx],
+    t,
+    tp,
+    p:document.getElementById('ev-p').value,
+    r:document.getElementById('ev-r').value,
+    note:document.getElementById('ev-n').value.trim()
+  };
+  save(); buildAll(); closeOverlay();
+}
+
+function deleteEv(key, idx) {
+  EVS[key].splice(idx,1);
+  if(!EVS[key].length) delete EVS[key];
+  save(); buildAll(); closeOverlay();
+}
+
+// ─── FILTER ───────────────────────────────────────────────────────────────
+function applyFilter(ph, rebuild=true) {
+  if(rebuild) { filter=ph; buildAll(); return; }
+  document.querySelectorAll('.f-btn').forEach(b=>b.classList.toggle('active',b.dataset.phase===ph));
+  const blocks=document.querySelectorAll('.month-block');
+  const divs=document.querySelectorAll('.phase-div');
+
+  if(ph==='all'){ blocks.forEach(b=>{b.classList.remove('dimmed');b.style.display='';}); divs.forEach(d=>d.style.display=''); document.querySelectorAll('.chip').forEach(c=>c.style.opacity=''); return; }
+  if(ph==='crit'){ blocks.forEach(b=>{b.classList.remove('dimmed');b.style.display='';}); divs.forEach(d=>d.style.display=''); document.querySelectorAll('.chip').forEach(c=>{c.style.opacity=c.classList.contains('p-crit')?'1':'0.07';}); return; }
+
+  blocks.forEach(b=>{ const v=b.dataset.ph===ph; b.classList.toggle('dimmed',!v); b.style.display=v?'':'none'; });
+  divs.forEach(d=>{ const lbl=d.querySelector('.pd-label'); d.style.display=(lbl&&lbl.textContent.trim()===PM[ph].l)?'':'none'; });
+  document.querySelectorAll('.chip').forEach(c=>c.style.opacity='');
+}
+
+document.querySelectorAll('.f-btn').forEach(b=>b.addEventListener('click',()=>{ filter=b.dataset.phase; buildAll(); }));
+
+// ─── VIEW TOGGLE ──────────────────────────────────────────────────────────
+function setView(v, btn) {
+  viewMode=v;
+  document.querySelectorAll('.vt-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  buildAll();
+}
+
+// ─── SCROLL TO TODAY ─────────────────────────────────────────────────────
+function scrollToToday() {
+  const id=`m-${today.getFullYear()}-${today.getMonth()}`;
+  const el=document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────────────────
+function exportData() {
+  const blob=new Blob([JSON.stringify({v:2,events:EVS},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`sal_de_mare_${today.toISOString().slice(0,10)}.json`; a.click();
+}
+function importData() { document.getElementById('file-in').click(); }
+function handleImport(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); EVS=d.events||d; save(); buildAll(); }catch(err){ alert('Arquivo inválido.'); } };
+  r.readAsText(file); e.target.value='';
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+async function startSync() {
+  if(syncStarted) return;
+  syncStarted = true;
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    calendarRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOCUMENT);
+    setSyncStatus('syncing', 'Carregando dados');
+
+    const snap = await getDoc(calendarRef);
+    if(!snap.exists()) {
+      await setDoc(calendarRef, {
+        events: EVS,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    unsubscribeSnapshot = onSnapshot(calendarRef, (docSnap) => {
+      const remote = docSnap.data()?.events;
+      EVS = migrateEvents(remote || EVS || JSON.parse(JSON.stringify(DEFAULT_EVS)));
+      persistCache();
+      syncReady = true;
+      buildAll();
+      setSyncStatus('ok', 'Sincronizado');
+    }, (error) => {
+      console.error(error);
+      syncReady = false;
+      setSyncStatus('error', 'Erro no Firebase');
+    });
+  } catch (error) {
+    console.error(error);
+    syncReady = false;
+    setSyncStatus('local', 'Modo local');
+    buildAll();
+  }
+}
+
+function unlockApp() {
+  sessionStorage.setItem(SESSION_KEY, '1');
+  document.getElementById('login-gate').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  buildAll();
+  startSync();
+}
+
+function handleLogin(event) {
+  event.preventDefault();
+  const input = document.getElementById('password-input');
+  const error = document.getElementById('login-error');
+  if(input.value === ACCESS_PASSWORD) {
+    error.textContent = '';
+    unlockApp();
+    return;
+  }
+  error.textContent = 'Senha incorreta.';
+  input.select();
+}
+
+document.getElementById('login-form').addEventListener('submit', handleLogin);
+
+if(sessionStorage.getItem(SESSION_KEY) === '1') {
+  unlockApp();
+}
+
+window.exportData = exportData;
+window.importData = importData;
+window.handleImport = handleImport;
+window.closeOverlay = closeOverlay;
+window.closeOverlayClick = closeOverlayClick;
+window.toggleDone = toggleDone;
+window.openEdit = openEdit;
+window.openDay = openDay;
+window.openAdd = openAdd;
+window.saveNew = saveNew;
+window.saveEdit = saveEdit;
+window.deleteEv = deleteEv;
+window.setView = setView;
+window.scrollToToday = scrollToToday;
+window.selectType = selectType;
+</script>
+</body>
+</html>
