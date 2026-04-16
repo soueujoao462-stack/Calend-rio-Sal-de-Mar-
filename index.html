@@ -904,9 +904,11 @@ let unsubscribeSnapshot = null;
 let syncReady = false;
 let syncStarted = false;
 let saveTimer = null;
+let pendingSyncJson = null;
 
 // Migrate old events without tp field — infer type from context
 function migrateEvents(evs) {
+  if(!evs || typeof evs !== 'object') return {};
   Object.values(evs).forEach(dayEvs => {
     dayEvs.forEach(e => {
       if(!e.tp) {
@@ -936,6 +938,14 @@ function setSyncStatus(kind, text) {
   el.className = `sync-pill ${kind}`;
   el.textContent = text;
 }
+function escapeHtml(value='') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 function persistCache() { localStorage.setItem(CACHE_KEY, JSON.stringify(EVS)); }
 function save() {
   persistCache();
@@ -943,6 +953,7 @@ function save() {
     setSyncStatus('local', 'Salvo localmente');
     return;
   }
+  pendingSyncJson = JSON.stringify(EVS);
   setSyncStatus('syncing', 'Sincronizando');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(pushEventsToFirestore, 250);
@@ -950,11 +961,11 @@ function save() {
 async function pushEventsToFirestore() {
   if(!calendarRef) return;
   try {
+    const eventsToSave = JSON.parse(pendingSyncJson || JSON.stringify(EVS));
     await setDoc(calendarRef, {
-      events: EVS,
+      events: eventsToSave,
       updatedAt: serverTimestamp()
     }, { merge: true });
-    setSyncStatus('ok', 'Sincronizado');
   } catch (error) {
     console.error(error);
     setSyncStatus('error', 'Erro ao sincronizar');
@@ -1253,25 +1264,29 @@ function selectType(k) {
 
 function openDay(key, label) {
   const evs = EVS[key]||[];
-  let html=`<div class="modal-date">${label}</div><div class="modal-title">Eventos do dia</div><div class="ev-list">`;
+  const safeLabel = escapeHtml(label);
+  let html=`<div class="modal-date">${safeLabel}</div><div class="modal-title">Eventos do dia</div><div class="ev-list">`;
   evs.forEach((e,i)=>{
     const pm=PM[e.p]||PM.int;
     const tp = e.tp || 'post';
     const tpMeta = EVENT_TYPES[tp] || EVENT_TYPES.post;
+    const safeTitle = escapeHtml(e.t);
+    const safeResp = escapeHtml(e.r || '');
+    const safeNote = escapeHtml(e.note || '');
     html+=`<div class="ev-item">
       <div class="ev-dot" style="background:${pm.dot}"></div>
       <div class="ev-body">
         <div class="ev-title${e.done?' done-text':''}">
-          ${e.t}
+          ${safeTitle}
           <span class="type-badge ${tp}" style="margin-left:6px">${tpMeta.icon} ${tpMeta.label}</span>
         </div>
         <div class="ev-meta">
           <span>${pm.l}</span>
-          ${e.r&&e.r!=='—'?`<span class="ev-resp">· ${e.r}</span>`:''}
-          ${e.done?'<span style="color:var(--f2)">· Concluído</span>':''}
-          ${tpMeta.countAsPost?'<span style="color:var(--f2-dot)">· conta como post</span>':''}
+          ${e.r&&e.r!=='â€”'?`<span class="ev-resp">Â· ${safeResp}</span>`:''}
+          ${e.done?'<span style="color:var(--f2)">Â· ConcluÃ­do</span>':''}
+          ${tpMeta.countAsPost?'<span style="color:var(--f2-dot)">Â· conta como post</span>':''}
         </div>
-        ${e.note?`<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">${e.note}</div>`:''}
+        ${e.note?`<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">${safeNote}</div>`:''}
         <div class="ev-acts">
           <button class="sm-btn done-btn${e.done?' active':''}" onclick="toggleDone('${key}',${i});openDay('${key}','${label}')">${e.done?'Reabrir':'Concluir'}</button>
           <button class="sm-btn" onclick="openEdit('${key}',${i})">Editar</button>
@@ -1328,6 +1343,8 @@ function saveNew(key, label) {
 function openEdit(key, idx) {
   const e=(EVS[key]||[])[idx]; if(!e) return;
   const tp = e.tp || 'post';
+  const safeTitle = escapeHtml(e.t);
+  const safeNote = escapeHtml(e.note||'');
   document.getElementById('modal-body').innerHTML=`
     <div class="modal-date">${keyLabel(key)}</div>
     <div class="modal-title">Editar evento</div>
@@ -1335,14 +1352,14 @@ function openEdit(key, idx) {
       ${typeSelector(tp)}
       <input type="hidden" id="ev-tp" value="${tp}">
     </div>
-    <div class="field"><label>Descrição</label>
-      <input id="ev-t" type="text" value="${e.t.replace(/"/g,'&quot;')}"></div>
+    <div class="field"><label>DescriÃ§Ã£o</label>
+      <input id="ev-t" type="text" value="${safeTitle}"></div>
     <div class="field-row">
       <div class="field"><label>Fase</label><select id="ev-p">${phaseOptions(e.p)}</select></div>
-      <div class="field"><label>Responsável</label><select id="ev-r">${teamOptions(e.r||'—')}</select></div>
+      <div class="field"><label>ResponsÃ¡vel</label><select id="ev-r">${teamOptions(e.r||'â€”')}</select></div>
     </div>
     <div class="field"><label>Nota interna</label>
-      <textarea id="ev-n" rows="2">${e.note||''}</textarea></div>
+      <textarea id="ev-n" rows="2">${safeNote}</textarea></div>
     <div class="mactions">
       <button class="mbtn danger del-btn" onclick="deleteEv('${key}',${idx})">Remover</button>
       <button class="mbtn" onclick="closeOverlay()">Cancelar</button>
@@ -1368,6 +1385,7 @@ function saveEdit(key, idx) {
 }
 
 function deleteEv(key, idx) {
+  if(!EVS[key] || !EVS[key][idx]) return;
   EVS[key].splice(idx,1);
   if(!EVS[key].length) delete EVS[key];
   save(); buildAll(); closeOverlay();
@@ -1414,7 +1432,7 @@ function importData() { document.getElementById('file-in').click(); }
 function handleImport(e) {
   const file=e.target.files[0]; if(!file) return;
   const r=new FileReader();
-  r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); EVS=d.events||d; save(); buildAll(); }catch(err){ alert('Arquivo inválido.'); } };
+  r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); EVS=migrateEvents(d.events||d); save(); buildAll(); }catch(err){ alert('Arquivo invÃ¡lido.'); } };
   r.readAsText(file); e.target.value='';
 }
 
@@ -1439,7 +1457,15 @@ async function startSync() {
 
     unsubscribeSnapshot = onSnapshot(calendarRef, (docSnap) => {
       const remote = docSnap.data()?.events;
-      EVS = migrateEvents(remote || EVS || JSON.parse(JSON.stringify(DEFAULT_EVS)));
+      const nextEvents = migrateEvents(remote || EVS || JSON.parse(JSON.stringify(DEFAULT_EVS)));
+      const remoteJson = JSON.stringify(nextEvents);
+      if(pendingSyncJson && remoteJson !== pendingSyncJson) {
+        return;
+      }
+      EVS = nextEvents;
+      if(pendingSyncJson === remoteJson) {
+        pendingSyncJson = null;
+      }
       persistCache();
       syncReady = true;
       buildAll();
