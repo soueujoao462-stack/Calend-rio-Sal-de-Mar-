@@ -756,6 +756,8 @@ const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho'
 
 const TEAM = ['—','João','Conteúdo','Produção','Direção','Social','Todos'];
 
+const NO_RESPONSIBLE = TEAM[0];
+
 const EVENT_TYPES = {
   post:        { label:'Post',           icon:'📱', countAsPost: true  },
   lancamento:  { label:'Lançamento',     icon:'🚀', countAsPost: true  },
@@ -897,7 +899,25 @@ const DEFAULT_EVS = {
 };
 
 // ─── STATE ────────────────────────────────────────────────────────────────
-let EVS = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null') || JSON.parse(JSON.stringify(DEFAULT_EVS));
+function loadCachedState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if(raw && typeof raw === 'object' && raw.events && typeof raw.updatedAt === 'number') {
+      return { events: raw.events, updatedAt: raw.updatedAt, dirty: !!raw.dirty };
+    }
+    if(raw && typeof raw === 'object') {
+      return { events: raw, updatedAt: 0, dirty: false };
+    }
+  } catch (error) {
+    console.warn('Falha ao ler cache local.', error);
+  }
+  return { events: JSON.parse(JSON.stringify(DEFAULT_EVS)), updatedAt: 0, dirty: false };
+}
+
+const cachedState = loadCachedState();
+let EVS = cachedState.events;
+let localUpdatedAt = cachedState.updatedAt;
+let localDirty = cachedState.dirty;
 let db = null;
 let calendarRef = null;
 let unsubscribeSnapshot = null;
@@ -946,8 +966,16 @@ function escapeHtml(value='') {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
-function persistCache() { localStorage.setItem(CACHE_KEY, JSON.stringify(EVS)); }
+function persistCache() {
+  localStorage.setItem(CACHE_KEY, JSON.stringify({
+    events: EVS,
+    updatedAt: localUpdatedAt,
+    dirty: localDirty
+  }));
+}
 function save() {
+  localUpdatedAt = Date.now();
+  localDirty = true;
   persistCache();
   if(!syncReady || !calendarRef) {
     setSyncStatus('local', 'Salvo localmente');
@@ -968,6 +996,7 @@ async function pushEventsToFirestore() {
     }, { merge: true });
   } catch (error) {
     console.error(error);
+    pendingSyncJson = null;
     setSyncStatus('error', 'Erro ao sincronizar');
   }
 }
@@ -1027,7 +1056,10 @@ function buildAll() {
         else totalOther++;
       });
     }
-    const weeks = Math.ceil(daysInMonth / 7);
+
+    const firstDay = new Date(y,m,1).getDay();
+    const dim = new Date(y,m+1,0).getDate();
+    const weeks = Math.ceil((firstDay + dim) / 7);
     const postsPerWeek = weeks > 0 ? (totalPosts / weeks).toFixed(1) : '0';
 
     block.innerHTML = `<div class="month-head">
@@ -1041,9 +1073,6 @@ function buildAll() {
     const cal = document.createElement('div');
     cal.className = 'cal';
     DAYS_PT.forEach(d=>{ cal.innerHTML+=`<div class="dow">${d}</div>`; });
-
-    const firstDay = new Date(y,m,1).getDay();
-    const dim = new Date(y,m+1,0).getDate();
 
     // build weeks with counters
     const cells = [];
@@ -1282,29 +1311,46 @@ function openDay(key, label) {
         </div>
         <div class="ev-meta">
           <span>${pm.l}</span>
-          ${e.r&&e.r!=='â€”'?`<span class="ev-resp">Â· ${safeResp}</span>`:''}
+          ${e.r&&e.r!==NO_RESPONSIBLE?`<span class="ev-resp">Â· ${safeResp}</span>`:''}
           ${e.done?'<span style="color:var(--f2)">Â· ConcluÃ­do</span>':''}
           ${tpMeta.countAsPost?'<span style="color:var(--f2-dot)">Â· conta como post</span>':''}
         </div>
         ${e.note?`<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">${safeNote}</div>`:''}
         <div class="ev-acts">
-          <button class="sm-btn done-btn${e.done?' active':''}" onclick="toggleDone('${key}',${i});openDay('${key}','${label}')">${e.done?'Reabrir':'Concluir'}</button>
-          <button class="sm-btn" onclick="openEdit('${key}',${i})">Editar</button>
-          <button class="sm-btn danger" onclick="deleteEv('${key}',${i})">Remover</button>
+          <button class="sm-btn done-btn${e.done?' active':''}" data-action="toggle-done" data-idx="${i}">${e.done?'Reabrir':'Concluir'}</button>
+          <button class="sm-btn" data-action="edit-event" data-idx="${i}">Editar</button>
+          <button class="sm-btn danger" data-action="delete-event" data-idx="${i}">Remover</button>
         </div>
       </div>
     </div>`;
   });
   html+=`</div><div style="display:flex;gap:8px;justify-content:space-between">
-    <button class="mbtn" onclick="openAdd('${key}','${label}')">+ Novo evento</button>
-    <button class="mbtn primary" onclick="closeOverlay()">Fechar</button>
+    <button class="mbtn" id="modal-add-event">+ Novo evento</button>
+    <button class="mbtn primary" id="modal-close-day">Fechar</button>
   </div>`;
-  document.getElementById('modal-body').innerHTML=html;
+  const modalBody = document.getElementById('modal-body');
+  modalBody.innerHTML=html;
+  modalBody.querySelectorAll('[data-action="toggle-done"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = Number(btn.dataset.idx);
+      toggleDone(key, idx);
+      openDay(key, label);
+    });
+  });
+  modalBody.querySelectorAll('[data-action="edit-event"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>openEdit(key, Number(btn.dataset.idx)));
+  });
+  modalBody.querySelectorAll('[data-action="delete-event"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteEv(key, Number(btn.dataset.idx)));
+  });
+  document.getElementById('modal-add-event').addEventListener('click', ()=>openAdd(key, label));
+  document.getElementById('modal-close-day').addEventListener('click', closeOverlay);
   openOverlay();
 }
 
 function openAdd(key, label) {
-  document.getElementById('modal-body').innerHTML=`
+  const modalBody = document.getElementById('modal-body');
+  modalBody.innerHTML=`
     <div class="modal-date">${label}</div>
     <div class="modal-title">Novo evento</div>
     <div class="field"><label>Tipo de compromisso</label>
@@ -1320,9 +1366,11 @@ function openAdd(key, label) {
     <div class="field"><label>Nota interna (opcional)</label>
       <textarea id="ev-n" rows="2" placeholder="Links, observações, contexto..."></textarea></div>
     <div class="mactions">
-      <button class="mbtn" onclick="closeOverlay()">Cancelar</button>
-      <button class="mbtn primary" onclick="saveNew('${key}','${label}')">Adicionar</button>
+      <button class="mbtn" id="modal-cancel-add">Cancelar</button>
+      <button class="mbtn primary" id="modal-save-add">Adicionar</button>
     </div>`;
+  document.getElementById('modal-cancel-add').addEventListener('click', closeOverlay);
+  document.getElementById('modal-save-add').addEventListener('click', ()=>saveNew(key, label));
   openOverlay();
   setTimeout(()=>document.getElementById('ev-t').focus(),60);
   document.getElementById('ev-t').addEventListener('keydown',e=>{if(e.key==='Enter')saveNew(key,label);});
@@ -1345,7 +1393,8 @@ function openEdit(key, idx) {
   const tp = e.tp || 'post';
   const safeTitle = escapeHtml(e.t);
   const safeNote = escapeHtml(e.note||'');
-  document.getElementById('modal-body').innerHTML=`
+  const modalBody = document.getElementById('modal-body');
+  modalBody.innerHTML=`
     <div class="modal-date">${keyLabel(key)}</div>
     <div class="modal-title">Editar evento</div>
     <div class="field"><label>Tipo de compromisso</label>
@@ -1356,15 +1405,18 @@ function openEdit(key, idx) {
       <input id="ev-t" type="text" value="${safeTitle}"></div>
     <div class="field-row">
       <div class="field"><label>Fase</label><select id="ev-p">${phaseOptions(e.p)}</select></div>
-      <div class="field"><label>ResponsÃ¡vel</label><select id="ev-r">${teamOptions(e.r||'â€”')}</select></div>
+      <div class="field"><label>ResponsÃ¡vel</label><select id="ev-r">${teamOptions(e.r||NO_RESPONSIBLE)}</select></div>
     </div>
     <div class="field"><label>Nota interna</label>
       <textarea id="ev-n" rows="2">${safeNote}</textarea></div>
     <div class="mactions">
-      <button class="mbtn danger del-btn" onclick="deleteEv('${key}',${idx})">Remover</button>
-      <button class="mbtn" onclick="closeOverlay()">Cancelar</button>
-      <button class="mbtn primary" onclick="saveEdit('${key}',${idx})">Salvar</button>
+      <button class="mbtn danger del-btn" id="modal-delete-edit">Remover</button>
+      <button class="mbtn" id="modal-cancel-edit">Cancelar</button>
+      <button class="mbtn primary" id="modal-save-edit">Salvar</button>
     </div>`;
+  document.getElementById('modal-delete-edit').addEventListener('click', ()=>deleteEv(key, idx));
+  document.getElementById('modal-cancel-edit').addEventListener('click', closeOverlay);
+  document.getElementById('modal-save-edit').addEventListener('click', ()=>saveEdit(key, idx));
   openOverlay();
   setTimeout(()=>{ const el=document.getElementById('ev-t'); el.focus(); el.setSelectionRange(el.value.length,el.value.length); },60);
 }
@@ -1456,16 +1508,32 @@ async function startSync() {
     }
 
     unsubscribeSnapshot = onSnapshot(calendarRef, (docSnap) => {
-      const remote = docSnap.data()?.events;
+      const remoteData = docSnap.data() || {};
+      const remote = remoteData.events;
+      const remoteUpdatedAt = remoteData.updatedAt?.toMillis?.() || 0;
       const nextEvents = migrateEvents(remote || EVS || JSON.parse(JSON.stringify(DEFAULT_EVS)));
       const remoteJson = JSON.stringify(nextEvents);
+      const localJson = JSON.stringify(EVS);
       if(pendingSyncJson && remoteJson !== pendingSyncJson) {
         return;
       }
+      if(localDirty && localJson !== remoteJson) {
+        if(!pendingSyncJson && calendarRef) {
+          pendingSyncJson = localJson;
+          setSyncStatus('syncing', 'Sincronizando');
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(pushEventsToFirestore, 50);
+        }
+        syncReady = true;
+        buildAll();
+        return;
+      }
       EVS = nextEvents;
+      localUpdatedAt = Math.max(localUpdatedAt, remoteUpdatedAt);
       if(pendingSyncJson === remoteJson) {
         pendingSyncJson = null;
       }
+      localDirty = false;
       persistCache();
       syncReady = true;
       buildAll();
