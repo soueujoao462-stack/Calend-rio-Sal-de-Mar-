@@ -1200,15 +1200,29 @@ function buildWeekView(container) {
     weekStart.setDate(thisMonday.getDate() + w*7);
 
     const weekDiv = document.createElement('div');
-    weekDiv.style.cssText = 'margin-bottom:2rem';
+    weekDiv.style.cssText = 'margin-bottom:2.5rem';
 
+    // Week title
     const weekLabel = weekStart.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
-    weekDiv.innerHTML = `<div style="font-family:'Lora',serif;font-size:15px;font-weight:500;margin-bottom:10px;color:var(--muted)">Semana de ${weekLabel}</div>`;
+    const title = document.createElement('div');
+    title.style.cssText = "font-family:'Lora',serif;font-size:15px;font-weight:500;margin-bottom:8px;color:var(--muted)";
+    title.textContent = 'Semana de ' + weekLabel;
+    weekDiv.appendChild(title);
 
+    // Header row with day names — separate container so it never mixes with cells
+    const header = document.createElement('div');
+    header.style.cssText = 'display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px';
+    DAYS_PT.forEach(d => {
+      const h = document.createElement('div');
+      h.className = 'dow';
+      h.textContent = d;
+      header.appendChild(h);
+    });
+    weekDiv.appendChild(header);
+
+    // Cells grid — only the 7 day cells, no headers mixed in
     const grid = document.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px';
-
-    DAYS_PT.forEach(d=>{ grid.innerHTML+=`<div class="dow">${d}</div>`; });
 
     for(let d=0;d<7;d++) {
       const date = new Date(weekStart);
@@ -1216,11 +1230,13 @@ function buildWeekView(container) {
       const key = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
       const evs = EVS[key]||[];
       const isToday = date.toDateString()===today.toDateString();
+      const label = keyLabel(key);
 
       const cell=document.createElement('div');
       cell.className='day'+(isToday?' is-today':'')+(evs.length?' has-event':'');
       cell.style.minHeight='110px';
       cell.dataset.key=key;
+      cell.dataset.label=label;
 
       const dn=document.createElement('div');
       dn.className='dn';
@@ -1231,7 +1247,8 @@ function buildWeekView(container) {
         const chip=document.createElement('div');
         const tp = e.tp || 'post';
         const tpMeta = EVENT_TYPES[tp] || EVENT_TYPES.post;
-        chip.className=`chip p-${e.p}`+(e.done?' done':'');
+        chip.className=`chip p-${e.p}`+(e.done?' done':'')+(isNearDeadline(key)&&e.p==='crit'?' deadline-near':'');
+        chip.dataset.key=key; chip.dataset.idx=i;
         chip.innerHTML=`<span class="chip-dot" style="background:${PM[e.p]?.dot||'var(--int-dot)'}"></span><span class="chip-text">${e.t}</span><span class="chip-type ${tp}" title="${tpMeta.label}">${tpMeta.icon}</span><span class="chip-check"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,4 3,6 7,2"/></svg></span>`;
         chip.querySelector('.chip-check').addEventListener('click', ev=>{ev.stopPropagation();toggleDone(key,i);});
         chip.addEventListener('click', ev=>{ev.stopPropagation();openEdit(key,i);});
@@ -1239,9 +1256,10 @@ function buildWeekView(container) {
       });
 
       const addBtn=document.createElement('button');addBtn.className='add-btn';addBtn.textContent='+';
-      addBtn.addEventListener('click', ev=>{ev.stopPropagation();openAdd(key,key);});
+      addBtn.title='Adicionar evento';
+      addBtn.addEventListener('click', ev=>{ev.stopPropagation();openAdd(key,label);});
       cell.appendChild(addBtn);
-      if(evs.length) cell.addEventListener('click',()=>openDay(key,key));
+      if(evs.length) cell.addEventListener('click',()=>openDay(key,label));
       grid.appendChild(cell);
     }
     weekDiv.appendChild(grid);
