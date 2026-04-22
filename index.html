@@ -672,7 +672,7 @@ body {
 <header class="header">
   <div class="brand">
     <h1>Sal de Maré</h1>
-    <p>Calendário de lançamento · Abril 2026 — Fevereiro 2027</p>
+    <p>Calendário de lançamento · Abril 2026 — Julho 2026</p>
   </div>
   <div class="header-right">
     <span class="tagline">Entre o sagrado e o profano, a Bahia.</span>
@@ -732,6 +732,8 @@ const SESSION_KEY = 'sdm_access_ok';
 const CACHE_KEY = 'sdm_evs';
 const FIRESTORE_COLLECTION = 'sharedCalendars';
 const FIRESTORE_DOCUMENT = 'sal-de-mare';
+const PLAN_VERSION = 'maresia-revisado-abril-julho-2026-v1';
+const PLAN_CUTOFF = '2026-04-21';
 const firebaseConfig = {
   apiKey: 'AIzaSyBfD2LsIZz4h1vE3Xw0DmMqz14mdeQ82To',
   authDomain: 'sal-calendario.firebaseapp.com',
@@ -755,15 +757,8 @@ const PM = {
 const MONTHS_DEF = [
   {y:2026,m:3, n:'Abril 2026',    ph:'f1', target:[4,5]},
   {y:2026,m:4, n:'Maio 2026',     ph:'f1', target:[4,5]},
-  {y:2026,m:5, n:'Junho 2026',    ph:'f2', target:[2,3]},
-  {y:2026,m:6, n:'Julho 2026',    ph:'f3', target:[4,5]},
-  {y:2026,m:7, n:'Agosto 2026',   ph:'f4', target:[1,2]},
-  {y:2026,m:8, n:'Setembro 2026', ph:'f4', target:[1,2]},
-  {y:2026,m:9, n:'Outubro 2026',  ph:'f5', target:[4,5]},
-  {y:2026,m:10,n:'Novembro 2026', ph:'f5', target:[4,5]},
-  {y:2026,m:11,n:'Dezembro 2026', ph:'f6', target:[5,7]},
-  {y:2027,m:0, n:'Janeiro 2027',  ph:'f6', target:[3,4]},
-  {y:2027,m:1, n:'Fevereiro 2027',ph:'f6', target:[3,4]},
+  {y:2026,m:5, n:'Junho 2026',    ph:'f2', target:[3,4]},
+  {y:2026,m:6, n:'Julho 2026',    ph:'f4', target:[5,6]},
 ];
 
 const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -788,151 +783,89 @@ const DEFAULT_EVS = {
   '2026-04-17':[{p:'f1',t:'Teasers sensoriais — início da semana 0',r:'Conteúdo',done:false,note:''}],
   '2026-04-18':[{p:'f1',t:'Teaser: fragmento visual',r:'Conteúdo',done:false,note:''}],
   '2026-04-20':[{p:'f1',t:'Teaser: textura + instrumento',r:'Conteúdo',done:false,note:''}],
-  '2026-04-22':[{p:'f1',t:'Conexão: câmera amigo da banda',r:'Conteúdo',done:false,note:''}],
-  '2026-04-24':[{p:'f1',t:'Dump fotográfico do processo',r:'Conteúdo',done:false,note:''}],
-  '2026-04-26':[{p:'f1',t:'Versão minimalista — voz + percussão',r:'Produção',done:false,note:''}],
-  '2026-04-28':[{p:'f1',t:'Processo criativo: tentativa e erro',r:'Conteúdo',done:false,note:''}],
-  '2026-05-01':[{p:'f1',t:'Prévia — Coração de Bola',r:'Conteúdo',done:false,note:''}],
-  '2026-05-03':[{p:'crit',t:'LANÇAMENTO — Coração de Bola',r:'Todos',done:false,note:'Às 6h da manhã'}],
-  '2026-05-05':[{p:'f1',t:'Post lançamento completo',r:'Social',done:false,note:''}],
-  '2026-05-06':[{p:'f1',t:'Bastidor + processo — Vumbora Amar',r:'Conteúdo',done:false,note:''}],
-  '2026-05-08':[{p:'f1',t:'Prévia — Vumbora Amar',r:'Conteúdo',done:false,note:''}],
-  '2026-05-10':[{p:'crit',t:'LANÇAMENTO — Vumbora Amar',r:'Todos',done:false,note:'Às 6h da manhã'}],
-  '2026-05-13':[{p:'f1',t:'Vem — conteúdo de ambiente',r:'Conteúdo',done:false,note:''}],
-  '2026-05-15':[{p:'f1',t:'Vem — identidade emocional',r:'Conteúdo',done:false,note:''}],
-  '2026-05-17':[{p:'crit',t:'LANÇAMENTO — Vem',r:'Todos',done:false,note:'Às 6h da manhã'}],
-  '2026-05-20':[{p:'f1',t:'Encerramento EP — desaceleração',r:'Direção',done:false,note:''}],
-  '2026-05-21':[{p:'f1',t:'Bastidores — recompensa pra quem acompanhou',r:'Conteúdo',done:false,note:''}],
-  '2026-05-23':[{p:'crit',t:'LANÇAMENTO — Já é + Topo do Mundo',r:'Todos',done:false,note:'Às 6h da manhã'}],
-  '2026-05-24':[{p:'f1',t:'Audiovisual completo',r:'Produção',done:false,note:''}],
-  '2026-05-25':[{p:'f1',t:'Mini doc narrativo do EP',r:'Direção',done:false,note:''}],
-  '2026-05-26':[{p:'int',t:'Início pré-produção do álbum',r:'João',done:false,note:''}],
-  '2026-05-28':[{p:'int',t:'Composição Reluz — ativa',r:'João',done:false,note:''}],
-  '2026-06-01':[{p:'f2',t:'Composição álbum — sessão 1',r:'João',done:false,note:'Mínimo 2 sessões/semana'}],
-  '2026-06-03':[{p:'f2',t:'Conteúdo orgânico São João',r:'Conteúdo',done:false,note:''}],
-  '2026-06-08':[{p:'f2',t:'Composição álbum — sessão 2',r:'João',done:false,note:''}],
-  '2026-06-10':[{p:'f2',t:'Testes de arranjo das faixas',r:'Produção',done:false,note:''}],
-  '2026-06-13':[{p:'int',t:'Fechar backing vocal Reluz',r:'João',done:false,note:''}],
-  '2026-06-15':[{p:'f2',t:'Composição — sessão 3',r:'João',done:false,note:''}],
-  '2026-06-17':[{p:'f2',t:'Post humanização — quem é a banda',r:'Conteúdo',done:false,note:''}],
-  '2026-06-20':[{p:'int',t:'Confirmar trompetista + mixer baiano',r:'João',done:false,note:''}],
-  '2026-06-22':[{p:'f2',t:'Composição — sessão 4',r:'João',done:false,note:''}],
-  '2026-06-24':[{p:'f2',t:'Testes de arranjo — fechamento',r:'Produção',done:false,note:''}],
-  '2026-06-27':[{p:'int',t:'Fechar repertório completo do álbum',r:'João',done:false,note:''}],
-  '2026-06-29':[{p:'int',t:'Planejamento financeiro da gravação',r:'João',done:false,note:''}],
-  '2026-07-04':[{p:'f3',t:'Gravação: base rítmica',r:'Produção',done:false,note:'Hierarquia de gravação — ver doc'}],
-  '2026-07-05':[{p:'f3',t:'Gravação: bateria',r:'Produção',done:false,note:''}],
-  '2026-07-06':[{p:'f3',t:'Gravação: baixo + harmonia',r:'Produção',done:false,note:''}],
-  '2026-07-07':[{p:'f3',t:'Gravação: voz principal',r:'João',done:false,note:''}],
-  '2026-07-08':[{p:'f3',t:'Gravação: backing vocal + sopros',r:'Produção',done:false,note:''}],
-  '2026-07-09':[{p:'f3',t:'Gravação: texturas + detalhes',r:'Produção',done:false,note:''}],
-  '2026-07-12':[{p:'int',t:'Identidade visual Reluz — definição',r:'Direção',done:false,note:''}],
-  '2026-07-15':[{p:'f3',t:'Vídeo lírico — gravação em Salvador',r:'Conteúdo',done:false,note:''}],
-  '2026-07-18':[{p:'f3',t:'Post silencioso — data sem contexto',r:'Social',done:false,note:''}],
-  '2026-07-19':[{p:'f3',t:'Fragmento 7s — postado às 6h da manhã',r:'Social',done:false,note:''}],
-  '2026-07-20':[{p:'crit',t:'LANÇAMENTO — Reluz · às 6h',r:'Todos',done:false,note:'Hora da maré. Fragmento 7s às 6h. Post principal às 6h.'}],
-  '2026-07-21':[{p:'f3',t:'Stories: história real de como nasceu',r:'João',done:false,note:''}],
-  '2026-07-23':[{p:'f3',t:'Percussão isolada — post derivado',r:'Conteúdo',done:false,note:''}],
-  '2026-07-25':[{p:'f3',t:'"Onde você ouviu pela 1ª vez?" — stories',r:'Social',done:false,note:''}],
-  '2026-07-27':[{p:'f3',t:'Compilado das respostas reais',r:'Social',done:false,note:''}],
-  '2026-07-29':[{p:'f3',t:'Versão ao vivo simples',r:'Conteúdo',done:false,note:''}],
-  '2026-08-03':[{p:'f4',t:'Gravação bloco 1 — dia 1',r:'Produção',done:false,note:''}],
-  '2026-08-04':[{p:'f4',t:'Gravação bloco 1 — dia 2',r:'Produção',done:false,note:''}],
-  '2026-08-05':[{p:'f4',t:'Gravação bloco 1 — dia 3',r:'Produção',done:false,note:''}],
-  '2026-08-08':[{p:'f4',t:'Post bastidor estúdio',r:'Conteúdo',done:false,note:''}],
-  '2026-08-10':[{p:'f4',t:'Gravação bloco 2 — dia 1',r:'Produção',done:false,note:''}],
-  '2026-08-11':[{p:'f4',t:'Gravação bloco 2 — dia 2',r:'Produção',done:false,note:''}],
-  '2026-08-12':[{p:'f4',t:'Gravação bloco 2 — dia 3',r:'Produção',done:false,note:''}],
-  '2026-08-15':[{p:'f4',t:'Post processo real',r:'Conteúdo',done:false,note:''}],
-  '2026-08-17':[{p:'f4',t:'Gravação bloco 3 — dia 1',r:'Produção',done:false,note:''}],
-  '2026-08-18':[{p:'f4',t:'Gravação bloco 3 — dia 2',r:'Produção',done:false,note:''}],
-  '2026-08-19':[{p:'f4',t:'Gravação bloco 3 — dia 3',r:'Produção',done:false,note:''}],
-  '2026-08-22':[{p:'int',t:'Capa do álbum — desenvolvimento',r:'Direção',done:false,note:''}],
-  '2026-08-24':[{p:'f4',t:'Post bastidor',r:'Conteúdo',done:false,note:''}],
-  '2026-08-26':[{p:'f4',t:'Gravação bloco 4 — dia 1',r:'Produção',done:false,note:''}],
-  '2026-08-27':[{p:'f4',t:'Gravação bloco 4 — dia 2',r:'Produção',done:false,note:''}],
-  '2026-08-28':[{p:'f4',t:'Gravação bloco 4 — dia 3',r:'Produção',done:false,note:''}],
-  '2026-09-02':[{p:'f4',t:'Gravação bloco 5 — dia 1',r:'Produção',done:false,note:''}],
-  '2026-09-03':[{p:'f4',t:'Gravação bloco 5 — dia 2',r:'Produção',done:false,note:''}],
-  '2026-09-04':[{p:'f4',t:'Gravação bloco 5 — dia 3',r:'Produção',done:false,note:''}],
-  '2026-09-07':[{p:'f4',t:'Post processo de gravação',r:'Conteúdo',done:false,note:''}],
-  '2026-09-09':[{p:'f4',t:'Gravação bloco 6 — dia 1',r:'Produção',done:false,note:''}],
-  '2026-09-10':[{p:'f4',t:'Gravação bloco 6 — dia 2',r:'Produção',done:false,note:''}],
-  '2026-09-11':[{p:'f4',t:'Gravação bloco 6 — dia 3',r:'Produção',done:false,note:''}],
-  '2026-09-14':[{p:'int',t:'Mixagem — início',r:'Produção',done:false,note:''}],
-  '2026-09-16':[{p:'f4',t:'Post bastidor final de gravação',r:'Conteúdo',done:false,note:''}],
-  '2026-09-21':[{p:'int',t:'Mixagem + masterização em andamento',r:'Produção',done:false,note:''}],
-  '2026-09-28':[{p:'int',t:'Álbum entregue para masterização',r:'João',done:false,note:''}],
-  '2026-10-01':[{p:'f5',t:'Era Sagrado e Profano — ativa',r:'Direção',done:false,note:''}],
-  '2026-10-03':[{p:'f5',t:'Sinal visual da era — grid muda',r:'Social',done:false,note:''}],
-  '2026-10-05':[{p:'f5',t:'Frase-âncora começa a circular',r:'Social',done:false,note:''}],
-  '2026-10-07':[{p:'f5',t:'Cartazes Salvador — 1ª rodada',r:'Produção',done:false,note:''}],
-  '2026-10-10':[{p:'f5',t:'Teaser Single 1 — 48h antes',r:'Social',done:false,note:''}],
-  '2026-10-11':[{p:'f5',t:'Fragmento 7s — 6h manhã',r:'Social',done:false,note:''}],
-  '2026-10-12':[{p:'crit',t:'LANÇAMENTO — Single 1 · às 6h',r:'Todos',done:false,note:'Mesma estrutura da Reluz'}],
-  '2026-10-14':[{p:'f5',t:'Stories + bastidor do Single 1',r:'Conteúdo',done:false,note:''}],
-  '2026-10-17':[{p:'f5',t:'Compilado respostas Single 1',r:'Social',done:false,note:''}],
-  '2026-10-19':[{p:'f5',t:'Conteúdo de rua — Salvador vivo',r:'Conteúdo',done:false,note:''}],
-  '2026-10-21':[{p:'int',t:'Objeto físico da era — produção',r:'Direção',done:false,note:''}],
-  '2026-10-24':[{p:'f5',t:'Teasers paleta + símbolo do álbum',r:'Social',done:false,note:''}],
-  '2026-10-28':[{p:'f5',t:'Ações espaços culturais Salvador',r:'Direção',done:false,note:''}],
-  '2026-11-01':[{p:'f5',t:'Conteúdo sensorial intenso',r:'Conteúdo',done:false,note:''}],
-  '2026-11-04':[{p:'f5',t:'Teaser Single 2 — 48h antes',r:'Social',done:false,note:''}],
-  '2026-11-05':[{p:'f5',t:'Fragmento 7s — 6h manhã',r:'Social',done:false,note:''}],
-  '2026-11-06':[{p:'crit',t:'LANÇAMENTO — Single 2 · às 6h',r:'Todos',done:false,note:''}],
-  '2026-11-08':[{p:'f5',t:'Stories narrativa Single 2',r:'João',done:false,note:''}],
-  '2026-11-11':[{p:'f5',t:'Compilado respostas Single 2',r:'Social',done:false,note:''}],
-  '2026-11-14':[{p:'crit',t:'ANÚNCIO OFICIAL — data do álbum',r:'Todos',done:false,note:'Só anuncia quando 100% confirmado'}],
-  '2026-11-16':[{p:'f5',t:'Cartazes Salvador — 2ª rodada',r:'Produção',done:false,note:''}],
-  '2026-11-21':[{p:'int',t:'Escuta coletiva — preparação',r:'Direção',done:false,note:''}],
-  '2026-11-23':[{p:'int',t:'Vídeo-manifesto — produção',r:'Direção',done:false,note:''}],
-  '2026-11-25':[{p:'int',t:'Objeto físico da era — distribuição',r:'Produção',done:false,note:''}],
-  '2026-11-28':[{p:'f5',t:'Ativações festas + espaços culturais',r:'Direção',done:false,note:''}],
-  '2026-12-05':[{p:'f6',t:'Escuta coletiva presencial em Salvador',r:'Direção',done:false,note:''}],
-  '2026-12-08':[{p:'f6',t:'Vídeo-manifesto no ar',r:'Social',done:false,note:''}],
-  '2026-12-10':[{p:'f6',t:'Compilado do público — publicado',r:'Social',done:false,note:''}],
-  '2026-12-12':[{p:'crit',t:'LANÇAMENTO DO ÁLBUM · às 6h',r:'Todos',done:false,note:'O momento. Tudo está pronto.'}],
-  '2026-12-13':[{p:'f6',t:'Live de escuta coletiva online',r:'Todos',done:false,note:''}],
-  '2026-12-14':[{p:'f6',t:'Posts múltiplos — semana do álbum',r:'Social',done:false,note:''}],
-  '2026-12-15':[{p:'crit',t:'SHOW DE LANÇAMENTO',r:'Todos',done:false,note:''}],
-  '2026-12-16':[{p:'f6',t:'Posts diários — identidade preservada',r:'Social',done:false,note:''}],
-  '2026-12-21':[{p:'f6',t:'Série por faixas — início',r:'Conteúdo',done:false,note:''}],
-  '2026-12-23':[{p:'f6',t:'Faixa 1 — Voltar pra Lá: história',r:'João',done:false,note:''}],
-  '2026-12-26':[{p:'f6',t:'Faixa 2 — Valente: história',r:'João',done:false,note:''}],
-  '2026-12-28':[{p:'f6',t:'Show editado com estética da era',r:'Conteúdo',done:false,note:''}],
-  '2027-01-03':[{p:'f6',t:'Faixa 3 — Não Me Deixe: história',r:'João',done:false,note:''}],
-  '2027-01-07':[{p:'f6',t:'Faixa 4 — Convencer: história',r:'João',done:false,note:''}],
-  '2027-01-10':[{p:'f6',t:'Engajamento versões do público',r:'Social',done:false,note:''}],
-  '2027-01-12':[{p:'f6',t:'Faixa 5 — Só Você: história',r:'João',done:false,note:''}],
-  '2027-01-17':[{p:'f6',t:'Faixa 6 — Lua: história',r:'João',done:false,note:''}],
-  '2027-01-21':[{p:'f6',t:'Faixa 7 — Feitiço: história',r:'João',done:false,note:''}],
-  '2027-01-24':[{p:'f6',t:'Show editado — era consolidada',r:'Conteúdo',done:false,note:''}],
-  '2027-01-31':[{p:'f6',t:'América Latina — expansão ativa',r:'Direção',done:false,note:''}],
-  '2027-02-07':[{p:'f6',t:'Série final de faixas',r:'João',done:false,note:''}],
-  '2027-02-14':[{p:'f6',t:'Show carnaval — era viva',r:'Todos',done:false,note:''}],
-  '2027-02-22':[{p:'f6',t:'Comunidade consolidada',r:'Direção',done:false,note:''}],
+  '2026-04-22':[{p:'f1',t:'Apresentação da banda — vídeo sem roteiro',r:'Conteúdo',tp:'post',done:false,note:'Imagem + som em 30 segundos. Sem texto explicativo, sem bio falada.'}],
+  '2026-04-23':[{p:'f2',t:'Kickoff do audiovisual Maresia — conceito, locação e linguagem visual',r:'Direção',tp:'reuniao',done:false,note:'Produção paralela com urgência para julho.'}],
+  '2026-04-24':[{p:'f1',t:'Apresentação da banda — vídeo curto 2',r:'Conteúdo',tp:'post',done:false,note:'Seguir linguagem sensorial e identidade da banda.'}],
+  '2026-04-26':[{p:'f1',t:'Apresentação da banda — vídeo curto 3',r:'Conteúdo',tp:'post',done:false,note:'Fechar a semana com 2–3 vídeos curtos.'}],
+  '2026-04-29':[{p:'f1',t:'Voz + instrumento — guia ou cover 1',r:'Conteúdo',tp:'post',done:false,note:'Câmera parada, luz natural. Medir retenção, compartilhamento e comentário com contexto real.'}],
+  '2026-04-30':[{p:'f2',t:'Busca de locação + testes de luz do audiovisual',r:'Produção',tp:'gravacao',done:false,note:'Bastidor pode virar conteúdo sem revelar o produto final.'}],
+  '2026-05-02':[{p:'f1',t:'Voz + instrumento — guia ou cover 2',r:'Conteúdo',tp:'post',done:false,note:'Observar qual música gera mais conversa.'}],
+  '2026-05-06':[{p:'f1',t:'Bastidor real de ensaio',r:'Conteúdo',tp:'post',done:false,note:'Sem narração. Deixar o processo falar.'}],
+  '2026-05-07':[{p:'f2',t:'Sessão de composição Reluz — 1',r:'João',tp:'sessao',done:false,note:'Manter o mínimo de 2 sessões por semana ao longo desta fase.'}],
+  '2026-05-09':[{p:'f1',t:'Fragmento de composição autoral',r:'Conteúdo',tp:'post',done:false,note:'Processo visível, sem legenda explicativa.'}],
+  '2026-05-12':[{p:'f1',t:'Formato vencedor — repetição 1 com nova música',r:'Conteúdo',tp:'post',done:false,note:'Consolidar o que melhor performou.'}],
+  '2026-05-14':[{p:'f2',t:'Sessão de composição Reluz — 2',r:'João',tp:'sessao',done:false,note:'Avançar refrão, letra e direção melódica.'}],
+  '2026-05-16':[{p:'f1',t:'Formato vencedor — repetição 2 com outro momento da banda',r:'Conteúdo',tp:'post',done:false,note:'Variar música e contexto, manter a estrutura.'}],
+  '2026-05-19':[{p:'f1',t:'Identidade visual recorrente — luz, enquadramento e paleta',r:'Social',tp:'post',done:false,note:'Começar a fixar linguagem visual reconhecível.'}],
+  '2026-05-21':[{p:'f2',t:'Arranjos Reluz — estrutura rítmica e referências',r:'Produção',tp:'sessao',done:false,note:'Decisões de arranjo entram antes da reta final de junho.'}],
+  '2026-05-23':[{p:'f1',t:'Identidade visual recorrente — repetição com assinatura da banda',r:'Conteúdo',tp:'post',done:false,note:'Refinar o padrão visual que mais gerou retorno real.'}],
+  '2026-05-28':[{p:'f2',t:'Bastidor do audiovisual — ensaio, câmera e decisões de luz',r:'Conteúdo',tp:'post',done:false,note:'Processo vira conteúdo sem spoiler da versão final.'}],
+  '2026-05-30':[{p:'f1',t:'Guia com identidade Sal de Maré — voz + instrumento',r:'Conteúdo',tp:'post',done:false,note:'Usar repertório guia com estética própria, não como cover genérico.'}],
+  '2026-06-03':[{p:'f2',t:'Gravação do audiovisual Maresia',r:'Produção',tp:'gravacao',done:false,note:'Quanto antes pronto, menor o risco para julho.'}],
+  '2026-06-05':[{p:'f2',t:'Sessão de composição Reluz — 3',r:'João',tp:'sessao',done:false,note:'O single de julho precisa estar avançado antes do fim de junho.'}],
+  '2026-06-07':[{p:'f1',t:'Guia/performance com a estética consolidada da banda',r:'Conteúdo',tp:'post',done:false,note:'Seguir os formatos que geraram mais salvamentos e comentários reais.'}],
+  '2026-06-10':[{p:'f2',t:'Edição do audiovisual Maresia',r:'Produção',tp:'sessao',done:false,note:'Hold até julho. Nenhuma prévia completa.'}],
+  '2026-06-12':[{p:'f2',t:'Fragmento de bastidor — frase musical ou riff em construção',r:'Conteúdo',tp:'post',done:false,note:'Bastidor sem revelar o produto final.'}],
+  '2026-06-14':[{p:'f2',t:'Sessão de composição Reluz — 4',r:'João',tp:'sessao',done:false,note:'Fechar verso, refrão e estrutura.'}],
+  '2026-06-17':[{p:'f3',t:'Teaser sensorial da era',r:'Conteúdo',tp:'post',done:false,note:'Fragmento visual do audiovisual, 6–10 segundos, sem revelar a música completa.'}],
+  '2026-06-18':[{p:'f2',t:'Fechar backing vocal, trompetista e estrutura rítmica',r:'Produção',tp:'reuniao',done:false,note:'Junho é prazo interno; não deixar decisões para julho.'}],
+  '2026-06-21':[{p:'f1',t:'São João — contexto real da banda',r:'Conteúdo',tp:'post',done:false,note:'Usar a realidade vivida, sem fabricar conteúdo junino.'}],
+  '2026-06-24':[{p:'f3',t:'Silêncio estratégico / redução de frequência',r:'Social',tp:'compromisso',done:false,note:'Reduzir presença sem sumir; preparar expectativa.'}],
+  '2026-06-25':[{p:'f2',t:'Reluz pronta? — checagem final de gravação, mix e master',r:'João',tp:'reuniao',done:false,note:'Se não estiver pronta, atrasa. A data serve à música.'}],
+  '2026-06-27':[{p:'f1',t:'Engajamento ativo com quem comentou e salvou',r:'Social',tp:'compromisso',done:false,note:'Responder, visitar perfis e aprofundar relação com a base.'}],
+  '2026-06-29':[{p:'f3',t:'Post com a data de julho sem contexto',r:'Social',tp:'post',done:false,note:'Apenas estética da era e a data. Sem título, hashtag ou explicação.'}],
+  '2026-06-30':[{p:'f3',t:'Checklist final pré-julho',r:'Direção',tp:'reuniao',done:false,note:'Audiovisual pronto, distribuição digital configurada, calendário de lançamento e orçamento de impulsionamento.'}],
+  '2026-07-18':[{p:'f4',t:'Data sem contexto — 48h antes',r:'Social',tp:'post',done:false,note:'Estética da era, sem título, hashtag ou explicação.'}],
+  '2026-07-19':[{p:'f4',t:'Teaser de 7 segundos — 24h antes às 6h',r:'Social',tp:'post',done:false,note:'Textura visual + áudio no último segundo.'}],
+  '2026-07-20':[
+    {p:'crit',t:'LANÇAMENTO — Audiovisual Maresia às 6h',r:'Todos',tp:'lancamento',done:false,note:'Post principal com a frase-âncora. Sem exagero de legenda.'},
+    {p:'f4',t:'Single autoral no streaming + stories com link',r:'Social',tp:'lancamento',done:false,note:'Publicar na tarde do mesmo dia, mantendo a identidade visual da era.'}
+  ],
+  '2026-07-23':[{p:'f4',t:'"Onde você ouviu o Maresia pela primeira vez?"',r:'Social',tp:'post',done:false,note:'Abrir conversa real com a base que recebeu o lançamento.'}],
+  '2026-07-25':[{p:'f4',t:'Compilado das respostas reais',r:'Social',tp:'post',done:false,note:'Transformar escuta do público em continuação do lançamento.'}],
+  '2026-07-27':[{p:'f4',t:'Percussão isolada / fragmento derivado do lançamento',r:'Conteúdo',tp:'post',done:false,note:'O pós também é parte do lançamento.'}],
+  '2026-07-29':[{p:'f4',t:'Versão ao vivo simples ou fragmento vocal',r:'Conteúdo',tp:'post',done:false,note:'Manter a era viva sem parecer um conteúdo genérico separado.'}],
+  '2026-07-31':[{p:'f4',t:'Análise do pós-lançamento + impulsionamento do melhor formato',r:'Social',tp:'compromisso',done:false,note:'Usar apenas o material com retorno orgânico real.'}],
 };
 
 // ─── STATE ────────────────────────────────────────────────────────────────
+function cloneEventsMap(evs) {
+  return JSON.parse(JSON.stringify(evs));
+}
+
+function applyPlanRevision(evs) {
+  const base = cloneEventsMap(DEFAULT_EVS);
+  if(!evs || typeof evs !== 'object') return base;
+  Object.entries(evs).forEach(([key, value]) => {
+    if(key < PLAN_CUTOFF) base[key] = value;
+  });
+  return base;
+}
+
 function loadCachedState() {
   try {
     const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
     if(raw && typeof raw === 'object' && raw.events && typeof raw.updatedAt === 'number') {
-      return { events: raw.events, updatedAt: raw.updatedAt, dirty: !!raw.dirty };
+      return {
+        events: raw.events,
+        updatedAt: raw.updatedAt,
+        dirty: !!raw.dirty,
+        planVersion: raw.planVersion || ''
+      };
     }
     if(raw && typeof raw === 'object') {
-      return { events: raw, updatedAt: 0, dirty: false };
+      return { events: raw, updatedAt: 0, dirty: false, planVersion: '' };
     }
   } catch (error) {
     console.warn('Falha ao ler cache local.', error);
   }
-  return { events: JSON.parse(JSON.stringify(DEFAULT_EVS)), updatedAt: 0, dirty: false };
+  return { events: cloneEventsMap(DEFAULT_EVS), updatedAt: 0, dirty: false, planVersion: PLAN_VERSION };
 }
 
 const cachedState = loadCachedState();
-let EVS = cachedState.events;
+let EVS = cachedState.planVersion === PLAN_VERSION ? cachedState.events : applyPlanRevision(cachedState.events);
 let localUpdatedAt = cachedState.updatedAt;
-let localDirty = cachedState.dirty;
+let localDirty = cachedState.dirty || cachedState.planVersion !== PLAN_VERSION;
 let db = null;
 let calendarRef = null;
 let unsubscribeSnapshot = null;
@@ -1001,7 +934,8 @@ function persistCache() {
   localStorage.setItem(CACHE_KEY, JSON.stringify({
     events: EVS,
     updatedAt: localUpdatedAt,
-    dirty: localDirty
+    dirty: localDirty,
+    planVersion: PLAN_VERSION
   }));
 }
 function save() {
@@ -1023,6 +957,7 @@ async function pushEventsToFirestore() {
     const eventsToSave = JSON.parse(pendingSyncJson || JSON.stringify(EVS));
     await setDoc(calendarRef, {
       events: eventsToSave,
+      planVersion: PLAN_VERSION,
       updatedAt: serverTimestamp()
     }, { merge: true });
   } catch (error) {
@@ -1569,6 +1504,7 @@ async function startSync() {
     if(!snap.exists()) {
       await setDoc(calendarRef, {
         events: EVS,
+        planVersion: PLAN_VERSION,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -1577,10 +1513,25 @@ async function startSync() {
     unsubscribeSnapshot = onSnapshot(calendarRef, (docSnap) => {
       const remoteData = docSnap.data() || {};
       const remote = remoteData.events;
+      const remotePlanVersion = remoteData.planVersion || '';
       const remoteUpdatedAt = remoteData.updatedAt?.toMillis?.() || 0;
-      const nextEvents = migrateEvents(remote || EVS || JSON.parse(JSON.stringify(DEFAULT_EVS)));
+      const needsPlanRevision = remotePlanVersion !== PLAN_VERSION;
+      const baseEvents = remote || EVS || cloneEventsMap(DEFAULT_EVS);
+      const nextEvents = migrateEvents(needsPlanRevision ? applyPlanRevision(baseEvents) : baseEvents);
       const remoteJson = JSON.stringify(nextEvents);
       const localJson = JSON.stringify(EVS);
+      if(needsPlanRevision && !pendingSyncJson && calendarRef) {
+        EVS = nextEvents;
+        localDirty = true;
+        persistCache();
+        pendingSyncJson = JSON.stringify(nextEvents);
+        setSyncStatus('syncing', 'Atualizando plano');
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(pushEventsToFirestore, 50);
+        syncReady = true;
+        buildAll();
+        return;
+      }
       if(pendingSyncJson && remoteJson !== pendingSyncJson) {
         return;
       }
