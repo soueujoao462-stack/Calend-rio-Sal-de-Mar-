@@ -630,6 +630,16 @@ body {
 .sync-pill.error::before { background: var(--crit-dot); }
 .sync-pill.local::before { background: var(--int-dot); }
 
+.sync-help {
+  width: 100%;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sync-help.warn {
+  color: var(--crit);
+}
+
 .hidden { display: none !important; }
 
 /* ─── RESPONSIVE ─────────────────────────── */
@@ -667,6 +677,10 @@ body {
   <div class="header-right">
     <span class="tagline">Entre o sagrado e o profano, a Bahia.</span>
     <span class="sync-pill syncing" id="sync-status">Conectando</span>
+    <button class="icon-btn hidden" id="sync-retry-btn" type="button" onclick="retrySync()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 3v4H9"/><path d="M13 7a5 5 0 10.95 3"/></svg>
+      Reconectar
+    </button>
     <button class="icon-btn" onclick="exportData()">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8m0 0L5 7m3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
       Exportar
@@ -675,6 +689,7 @@ body {
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 10V2m0 0L5 5m3-3 3 3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
       Importar
     </button>
+    <div class="sync-help" id="sync-help">As alteracoes aparecem para todos quando o status estiver como Sincronizado.</div>
   </div>
 </header>
 
@@ -709,7 +724,7 @@ body {
 </div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getApps, initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const ACCESS_PASSWORD = 'saldemaredaterra';
@@ -925,6 +940,7 @@ let syncReady = false;
 let syncStarted = false;
 let saveTimer = null;
 let pendingSyncJson = null;
+let syncRetryTimer = null;
 
 // Migrate old events without tp field — infer type from context
 function migrateEvents(evs) {
@@ -954,9 +970,24 @@ const today = new Date();
 
 function setSyncStatus(kind, text) {
   const el = document.getElementById('sync-status');
+  const help = document.getElementById('sync-help');
+  const retryBtn = document.getElementById('sync-retry-btn');
   if(!el) return;
   el.className = `sync-pill ${kind}`;
   el.textContent = text;
+  if(help) {
+    const helpText = {
+      ok: 'Alteracoes em qualquer aparelho ficam visiveis para toda a equipe quase em tempo real.',
+      syncing: 'Aguarde alguns segundos para o status voltar para Sincronizado antes de fechar a pagina.',
+      error: 'O Firebase falhou. Sem isso, cada navegador guarda uma versao separada.',
+      local: 'Modo local: as mudancas ficam salvas so neste navegador ate a conexao com o Firebase voltar.'
+    };
+    help.textContent = helpText[kind] || '';
+    help.classList.toggle('warn', kind === 'error' || kind === 'local');
+  }
+  if(retryBtn) {
+    retryBtn.classList.toggle('hidden', kind !== 'error' && kind !== 'local');
+  }
 }
 function escapeHtml(value='') {
   return String(value)
@@ -978,7 +1009,7 @@ function save() {
   localDirty = true;
   persistCache();
   if(!syncReady || !calendarRef) {
-    setSyncStatus('local', 'Salvo localmente');
+    setSyncStatus('local', 'Salvo so neste navegador');
     return;
   }
   pendingSyncJson = JSON.stringify(EVS);
@@ -998,7 +1029,42 @@ async function pushEventsToFirestore() {
     console.error(error);
     pendingSyncJson = null;
     setSyncStatus('error', 'Erro ao sincronizar');
+    scheduleRetrySync();
   }
+}
+function clearSyncRetry() {
+  clearTimeout(syncRetryTimer);
+  syncRetryTimer = null;
+}
+function cleanupSyncState() {
+  clearSyncRetry();
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if(unsubscribeSnapshot) {
+    unsubscribeSnapshot();
+    unsubscribeSnapshot = null;
+  }
+  db = null;
+  calendarRef = null;
+  syncReady = false;
+  syncStarted = false;
+}
+function scheduleRetrySync(delay = 4000) {
+  if(syncRetryTimer) return;
+  syncRetryTimer = setTimeout(() => {
+    syncRetryTimer = null;
+    retrySync();
+  }, delay);
+}
+function retrySync() {
+  cleanupSyncState();
+  if(!navigator.onLine) {
+    setSyncStatus('local', 'Sem internet');
+    scheduleRetrySync(5000);
+    return;
+  }
+  setSyncStatus('syncing', 'Reconectando');
+  startSync();
 }
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmtKey(y,m,d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
@@ -1192,88 +1258,58 @@ function appendWeekRow(cal, weekCells, y, m, weekStart, postCount, target) {
 
 // ─── WEEK VIEW ────────────────────────────────────────────────────────────
 function buildWeekView(container) {
-  // Start on the Sunday of the current week.
-  // today.getDay() returns 0=Dom, 1=Seg … 6=Sáb — same order as DAYS_PT,
-  // so subtracting it always lands on Sunday, matching the month view layout.
-  const thisSunday = new Date(today);
-  thisSunday.setDate(today.getDate() - today.getDay());
+  const thisMonday = new Date(today);
+  thisMonday.setDate(today.getDate() - (today.getDay()||7) + 1);
 
   for(let w=0; w<8; w++) {
-    const weekStart = new Date(thisSunday);
-    weekStart.setDate(thisSunday.getDate() + w*7);
+    const weekStart = new Date(thisMonday);
+    weekStart.setDate(thisMonday.getDate() + w*7);
 
     const weekDiv = document.createElement('div');
-    weekDiv.style.cssText = 'margin-bottom:2.5rem';
+    weekDiv.style.cssText = 'margin-bottom:2rem';
 
-    // Week title — show date range Sun–Sat
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    const fmtOpts = {day:'numeric', month:'long'};
-    const labelStart = weekStart.toLocaleDateString('pt-BR', fmtOpts);
-    const labelEnd   = weekEnd.toLocaleDateString('pt-BR', {day:'numeric', month:'long', year:'numeric'});
-    const title = document.createElement('div');
-    title.style.cssText = "font-family:'Lora',serif;font-size:15px;font-weight:500;margin-bottom:8px;color:var(--muted)";
-    title.textContent = `Semana de ${labelStart} a ${labelEnd}`;
-    weekDiv.appendChild(title);
+    const weekLabel = weekStart.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+    weekDiv.innerHTML = `<div style="font-family:'Lora',serif;font-size:15px;font-weight:500;margin-bottom:10px;color:var(--muted)">Semana de ${weekLabel}</div>`;
 
-    // Header row — separate container so headers never mix with day cells
-    const header = document.createElement('div');
-    header.style.cssText = 'display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px';
-    DAYS_PT.forEach(d => {
-      const h = document.createElement('div');
-      h.className = 'dow';
-      h.textContent = d;
-      header.appendChild(h);
-    });
-    weekDiv.appendChild(header);
-
-    // Cells grid — exactly 7 day cells, no headers mixed in
     const grid = document.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px';
 
-    for(let d=0; d<7; d++) {
+    DAYS_PT.forEach(d=>{ grid.innerHTML+=`<div class="dow">${d}</div>`; });
+
+    for(let d=0;d<7;d++) {
       const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + d);
+      date.setDate(weekStart.getDate()+d);
       const key = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
-      const evs = EVS[key] || [];
-      const isToday = date.toDateString() === today.toDateString();
-      const label = keyLabel(key);
+      const evs = EVS[key]||[];
+      const isToday = date.toDateString()===today.toDateString();
 
-      const cell = document.createElement('div');
-      cell.className = 'day' + (isToday ? ' is-today' : '') + (evs.length ? ' has-event' : '');
-      cell.style.minHeight = '110px';
-      cell.dataset.key   = key;
-      cell.dataset.label = label;
+      const cell=document.createElement('div');
+      cell.className='day'+(isToday?' is-today':'')+(evs.length?' has-event':'');
+      cell.style.minHeight='110px';
+      cell.dataset.key=key;
 
-      const dn = document.createElement('div');
-      dn.className = 'dn';
-      dn.textContent = date.getDate() + ' ' + MONTHS_PT[date.getMonth()].slice(0,3);
+      const dn=document.createElement('div');
+      dn.className='dn';
+      dn.textContent=date.getDate()+' '+MONTHS_PT[date.getMonth()].slice(0,3);
       cell.appendChild(dn);
 
-      evs.forEach((e, i) => {
-        const chip = document.createElement('div');
+      evs.forEach((e,i)=>{
+        const chip=document.createElement('div');
         const tp = e.tp || 'post';
         const tpMeta = EVENT_TYPES[tp] || EVENT_TYPES.post;
-        chip.className = `chip p-${e.p}` + (e.done ? ' done' : '') + (isNearDeadline(key) && e.p === 'crit' ? ' deadline-near' : '');
-        chip.dataset.key = key;
-        chip.dataset.idx = i;
-        chip.innerHTML = `<span class="chip-dot" style="background:${PM[e.p]?.dot||'var(--int-dot)'}"></span><span class="chip-text">${e.t}</span><span class="chip-type ${tp}" title="${tpMeta.label}">${tpMeta.icon}</span><span class="chip-check"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,4 3,6 7,2"/></svg></span>`;
-        chip.querySelector('.chip-check').addEventListener('click', ev => { ev.stopPropagation(); toggleDone(key, i); });
-        chip.addEventListener('click', ev => { ev.stopPropagation(); openEdit(key, i); });
+        chip.className=`chip p-${e.p}`+(e.done?' done':'');
+        chip.innerHTML=`<span class="chip-dot" style="background:${PM[e.p]?.dot||'var(--int-dot)'}"></span><span class="chip-text">${e.t}</span><span class="chip-type ${tp}" title="${tpMeta.label}">${tpMeta.icon}</span><span class="chip-check"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,4 3,6 7,2"/></svg></span>`;
+        chip.querySelector('.chip-check').addEventListener('click', ev=>{ev.stopPropagation();toggleDone(key,i);});
+        chip.addEventListener('click', ev=>{ev.stopPropagation();openEdit(key,i);});
         cell.appendChild(chip);
       });
 
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = '+';
-      addBtn.title = 'Adicionar evento';
-      addBtn.addEventListener('click', ev => { ev.stopPropagation(); openAdd(key, label); });
+      const addBtn=document.createElement('button');addBtn.className='add-btn';addBtn.textContent='+';
+      addBtn.addEventListener('click', ev=>{ev.stopPropagation();openAdd(key,key);});
       cell.appendChild(addBtn);
-
-      if(evs.length) cell.addEventListener('click', () => openDay(key, label));
+      if(evs.length) cell.addEventListener('click',()=>openDay(key,key));
       grid.appendChild(cell);
     }
-
     weekDiv.appendChild(grid);
     container.appendChild(weekDiv);
   }
@@ -1523,7 +1559,8 @@ async function startSync() {
   if(syncStarted) return;
   syncStarted = true;
   try {
-    const app = initializeApp(firebaseConfig);
+    clearSyncRetry();
+    const app = getApps()[0] || initializeApp(firebaseConfig);
     db = getFirestore(app);
     calendarRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOCUMENT);
     setSyncStatus('syncing', 'Carregando dados');
@@ -1572,11 +1609,15 @@ async function startSync() {
       console.error(error);
       syncReady = false;
       setSyncStatus('error', 'Erro no Firebase');
+      syncStarted = false;
+      scheduleRetrySync();
     });
   } catch (error) {
     console.error(error);
     syncReady = false;
     setSyncStatus('local', 'Modo local');
+    syncStarted = false;
+    scheduleRetrySync();
     buildAll();
   }
 }
@@ -1608,6 +1649,9 @@ if(sessionStorage.getItem(SESSION_KEY) === '1') {
   unlockApp();
 }
 
+window.addEventListener('online', retrySync);
+window.addEventListener('offline', () => setSyncStatus('local', 'Sem internet'));
+
 window.exportData = exportData;
 window.importData = importData;
 window.handleImport = handleImport;
@@ -1623,6 +1667,7 @@ window.deleteEv = deleteEv;
 window.setView = setView;
 window.scrollToToday = scrollToToday;
 window.selectType = selectType;
+window.retrySync = retrySync;
 </script>
 </body>
 </html>
